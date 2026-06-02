@@ -1,1 +1,317 @@
-/* Placeholder — content will be added in Phase 8 */
+.admin-container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 1.5rem;
+}
+
+.admin-tab-btn {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.admin-tab-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-hover);
+}
+
+.admin-tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.admin-section {
+    display: none;
+}
+
+.admin-section.active {
+    display: block;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    color: var(--text-on-accent);
+}
+
+.btn-primary:hover {
+    opacity: 0.85;
+}
+
+.btn-danger {
+    background-color: var(--danger);
+    color: var(--text-on-accent);
+}
+
+.btn-danger:hover {
+    opacity: 0.85;
+}
+
+.btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+}
+
+.btn-outline {
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background-color: transparent;
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-card);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+.user-color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+    border: 1px solid var(--border-color);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background-color: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+}
+
+.status-inactive {
+    background-color: color-mix(in srgb, var(--text-muted) 15%, transparent);
+    color: var(--text-muted);
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* ── Modal ── */
+.modal {
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    width: 90vw;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal-confirm {
+    max-width: 400px;
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+}
+
+/* ── Form ── */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    color: var(--text-secondary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+}
+
+.form-error {
+    font-size: 0.8rem;
+    color: var(--danger);
+    margin-top: 0.3rem;
+}
+
+/* ── Color picker ── */
+.color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.color-presets {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+}
+
+.color-preset-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    transition: transform 0.1s ease, border-color 0.15s ease;
+}
+
+.color-preset-btn:hover {
+    transform: scale(1.15);
+}
+
+.color-preset-btn.selected {
+    border-color: var(--text-primary);
+    transform: scale(1.15);
+}
+
+.color-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+/* ── Recurrence controls ── */
+.recurrence-fields {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--bg-primary);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.recurrence-fields.hidden {
+    display: none;
+}
+
+/* ── Template table extras ── */
+.recurrence-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background-color: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+}
+
+.sp-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: color-mix(in srgb, var(--warning) 20%, transparent);
+    color: color-mix(in srgb, var(--warning) 60%, var(--text-primary));
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn {
+        justify-content: center;
+    }
+
+    .actions-cell {
+        flex-direction: column;
+    }
+
+    .admin-table th,
+    .admin-table td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+}
