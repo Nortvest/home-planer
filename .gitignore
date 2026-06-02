@@ -1,41 +1,36 @@
-# Opencode
+# AI
 .opencode
 
 # Python
 __pycache__/
 *.py[cod]
-*.so
-*.dylib
-*.dll
-
-# Virtual environment (uv)
-backend/.venv/
-.venv/
-
-# Build artifacts
+*.egg-info/
 dist/
 build/
-*.egg-info/
+.eggs/
+*.egg
+.venv/
+
+# Backend caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Database
+data/*.db
+
+# Node (frontend tooling)
+node_modules/
 
 # IDE
-.idea/
 .vscode/
-
-# Environment variables
-.env
-.env.*
-!.env.example
+.idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Testing
-.pytest_cache/
-.ruff_cache/
-.coverage
-htmlcov/
-*.gcov
-
-# Logs
-*.log
+# Env
+.env
