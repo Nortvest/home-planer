@@ -14,7 +14,9 @@ import {
 
 setupTheme();
 
-const MAX_VISIBLE_CARDS = 3;
+function getMaxVisibleCards() {
+    return window.innerWidth <= 600 ? Infinity : 3;
+}
 
 const MONTH_NAMES = [
     'Январь', 'Февраль', 'Март', 'Апрель',
@@ -223,17 +225,18 @@ function populateTasks(daysData) {
         }
 
         hasAnyTasks = true;
-        const visible = tasks.slice(0, MAX_VISIBLE_CARDS);
+        const maxVisible = getMaxVisibleCards();
+        const visible = tasks.slice(0, maxVisible);
         for (const task of visible) {
             const card = renderTaskCard(task, onCardRefresh);
             card._onCardRefresh = onCardRefresh;
             tc.appendChild(card);
         }
 
-        if (tasks.length > MAX_VISIBLE_CARDS) {
+        if (tasks.length > maxVisible) {
             const more = document.createElement('div');
             more.className = 'calendar-more-count';
-            more.textContent = `+${tasks.length - MAX_VISIBLE_CARDS} ещё`;
+            more.textContent = `+${tasks.length - maxVisible} ещё`;
             tc.appendChild(more);
         }
     }

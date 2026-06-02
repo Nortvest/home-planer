@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: planner-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      DB_PATH: /app/data/planner.db
+      TZ: "${TZ:-UTC}"
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      SERVE_FRONTEND: "0"
+      CORS_ALLOW_ORIGINS: "*"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: planner-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-5500}:80"
+
+volumes:
+  planner-data:

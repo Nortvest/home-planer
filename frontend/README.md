@@ -47,3 +47,31 @@ const API_BASE = 'http://localhost:8000/api';
 ## Деплой
 
 В продакшене бэкенд отдаёт статику фронта. Установите `SERVE_FRONTEND=1` на бэке — фронт будет доступен по основному адресу.
+
+## Docker
+
+### Сборка образа
+
+```bash
+docker build -t planner-frontend .
+```
+
+### Запуск
+
+```bash
+docker run -p 5500:80 planner-frontend
+```
+
+### Адрес бэка в compose-сети
+
+В `js/config.js` укажите:
+
+```js
+const API_BASE = 'http://backend:8000/api';
+```
+
+При доступе снаружи compose-сети используйте:
+
+```js
+const API_BASE = 'http://localhost:8000/api';
+```

@@ -58,3 +58,27 @@ uv run pytest
 from src.infrastructure.db.migrations import run_migrations
 run_migrations("path/to/planner.db")
 ```
+
+## Docker
+
+### Сборка образа
+
+```bash
+docker build -t planner-backend .
+```
+
+### Запуск
+
+```bash
+docker run -p 8000:8000 -v "$(pwd)/../data:/app/data" \
+  -e DB_PATH=/app/data/planner.db \
+  -e TZ=Europe/Moscow \
+  planner-backend
+```
+
+### Логи и shell
+
+```bash
+docker logs <container-name>
+docker exec -it <container-name> /bin/sh
+```

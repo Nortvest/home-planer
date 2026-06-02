@@ -1,0 +1,7 @@
+node_modules/
+*.md
+backend/
+data/
+.git/
+Dockerfile
+.dockerignore
