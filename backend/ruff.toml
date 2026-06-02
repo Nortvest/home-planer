@@ -37,9 +37,17 @@ ignore = [
     # Ignore suggestion for using comprehension (un-readable code)
     "PERF403",
     "PERF401",
+    # Runtime imports needed at runtime (not type-only)
+    "TC001", "TC003",
 ]
 
 [lint.per-file-ignores]
+"src/application/**" = [
+    "PLR0913",  # Many args are natural for use-case constructors
+    "PLR0917",  # Many positional args
+    "PLR0915",  # Statement count
+    "PLR6301",  # Method vs function heuristic
+]
 "tests/*" = [
     "INP001",
     "S101",
