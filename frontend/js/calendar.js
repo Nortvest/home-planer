@@ -1,5 +1,6 @@
 import { setupTheme } from './theme.js';
 import { get } from './api.js';
+import { renderTaskCard, updateCardInDOM } from './card.js';
 import {
     setUsers,
     getUsers,
@@ -7,6 +8,7 @@ import {
     getCurrentMonth,
     setCalendarTasks,
     getCalendarTasks,
+    updateTaskInState,
     clearCalendarCache,
 } from './state.js';
 
@@ -191,45 +193,15 @@ function buildGrid(year, month) {
     }
 }
 
-function getUserColor(user) {
-    return user?.color || '#999999';
-}
-
-function renderTaskCard(task, users) {
-    const card = document.createElement('div');
-    card.className = 'calendar-task-card';
-
-    if (task.status === 'done') {
-        card.classList.add('done');
-    } else if (task.status === 'overdue') {
-        card.classList.add('overdue');
+function onCardRefresh(updatedTask) {
+    const { year, month } = getCurrentMonth();
+    updateTaskInState(year, month, updatedTask.id, (t) => {
+        Object.assign(t, updatedTask);
+    });
+    const cardEl = document.querySelector(`.calendar-task-card[data-task-id="${updatedTask.id}"]`);
+    if (cardEl) {
+        updateCardInDOM(cardEl, updatedTask);
     }
-
-    const assignee = task.assignee;
-    const color = assignee ? getUserColor(assignee) : '#999999';
-
-    const bar = document.createElement('div');
-    bar.className = 'calendar-task-color-bar';
-    bar.style.backgroundColor = color;
-    card.appendChild(bar);
-
-    const content = document.createElement('div');
-    content.className = 'calendar-task-content';
-
-    const title = document.createElement('div');
-    title.className = 'calendar-task-title';
-    title.textContent = task.title;
-    content.appendChild(title);
-
-    const sp = document.createElement('span');
-    sp.className = 'calendar-task-sp';
-    const spVal = task.sp_cost_current ?? task.sp_cost_at_completion ?? 0;
-    sp.textContent = `SP ${spVal}`;
-    content.appendChild(sp);
-
-    card.appendChild(content);
-
-    return card;
 }
 
 function populateTasks(daysData) {
@@ -245,7 +217,8 @@ function populateTasks(daysData) {
 
         const visible = tasks.slice(0, MAX_VISIBLE_CARDS);
         for (const task of visible) {
-            const card = renderTaskCard(task, getUsers());
+            const card = renderTaskCard(task, onCardRefresh);
+            card._onCardRefresh = onCardRefresh;
             tc.appendChild(card);
         }
 

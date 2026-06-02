@@ -34,6 +34,22 @@ export function getCalendarTasks(year, month) {
     return tasks ? [...tasks] : null;
 }
 
+export function updateTaskInState(year, month, taskId, updater) {
+    const key = `${year}-${month}`;
+    const days = state.calendarTasks[key];
+    if (!days) return false;
+    for (const dateKey of Object.keys(days)) {
+        const tasks = days[dateKey];
+        for (const task of tasks) {
+            if (task.id === taskId) {
+                updater(task);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 export function clearCalendarCache() {
     state.calendarTasks = {};
     state.lastLoadedMonth = null;

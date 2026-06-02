@@ -1,0 +1,173 @@
+.calendar-task-card {
+    position: relative;
+}
+
+.card-actions-btn {
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    line-height: 1;
+    color: var(--text-muted);
+    background: transparent;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    z-index: 2;
+    padding: 0;
+    opacity: 0;
+}
+
+.calendar-task-card:hover .card-actions-btn {
+    opacity: 1;
+}
+
+.card-actions-btn:hover {
+    background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+    color: var(--text-primary);
+}
+
+.card-actions-btn:active {
+    background-color: color-mix(in srgb, var(--text-primary) 20%, transparent);
+}
+
+.card-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 50;
+    min-width: 160px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    padding: 0.25rem 0;
+    display: none;
+}
+
+.card-dropdown.open {
+    display: block;
+}
+
+.card-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    white-space: nowrap;
+}
+
+.card-dropdown-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.card-dropdown-item:active {
+    background-color: color-mix(in srgb, var(--text-primary) 10%, var(--bg-hover));
+}
+
+.card-dropdown-item.danger {
+    color: var(--danger);
+}
+
+.card-dropdown-separator {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: 0.2rem 0;
+}
+
+.card-reassign-submenu {
+    position: absolute;
+    right: 100%;
+    top: 0;
+    min-width: 140px;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    padding: 0.25rem 0;
+    display: none;
+}
+
+.card-reassign-submenu.open {
+    display: block;
+}
+
+.card-reassign-submenu .card-dropdown-item {
+    padding-left: 0.75rem;
+}
+
+.card-reassign-user-color {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.card-status-icon {
+    font-size: 0.6rem;
+    flex-shrink: 0;
+    width: 0.9rem;
+    text-align: center;
+}
+
+.calendar-task-card.done {
+    opacity: 0.45;
+}
+
+.calendar-task-card.done .calendar-task-card-inner .calendar-task-title {
+    text-decoration: line-through;
+}
+
+.calendar-task-card.done .card-actions-btn {
+    display: none;
+}
+
+.calendar-task-card.overdue .calendar-task-color-bar {
+    background-color: var(--danger) !important;
+}
+
+.calendar-task-card.overdue .card-status-icon {
+    color: var(--danger);
+}
+
+.card-actions-btn-mobile {
+    opacity: 1;
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 600px) {
+    .card-actions-btn {
+        opacity: 1;
+        width: 1.6rem;
+        height: 1.6rem;
+        font-size: 0.8rem;
+    }
+
+    .card-dropdown {
+        min-width: 150px;
+    }
+
+    .card-reassign-submenu {
+        min-width: 130px;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .card-dropdown {
+        border-color: color-mix(in srgb, var(--border-color) 80%, white);
+    }
+}
