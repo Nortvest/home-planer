@@ -1,6 +1,6 @@
 import { setupTheme } from './theme.js';
 import { get } from './api.js';
-import { renderTaskCard, updateCardInDOM } from './card.js';
+import { renderTaskCard, updateCardInDOM, closeAllDropdowns } from './card.js';
 import {
     setUsers,
     getUsers,
@@ -63,6 +63,10 @@ function getOrCreateContainer() {
     return container;
 }
 
+function clearContainer() {
+    appEl.innerHTML = '';
+}
+
 function renderNav(year, month) {
     const container = getOrCreateContainer();
     let nav = container.querySelector('.calendar-nav');
@@ -76,14 +80,14 @@ function renderNav(year, month) {
 
     const prevBtn = document.createElement('button');
     prevBtn.className = 'nav-prev';
-    prevBtn.textContent = '‹';
+    prevBtn.textContent = '\u2039';
     prevBtn.title = 'Предыдущий месяц';
     prevBtn.setAttribute('aria-label', 'Предыдущий месяц');
     prevBtn.addEventListener('click', () => changeMonth(-1));
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'nav-next';
-    nextBtn.textContent = '›';
+    nextBtn.textContent = '\u203A';
     nextBtn.title = 'Следующий месяц';
     nextBtn.setAttribute('aria-label', 'Следующий месяц');
     nextBtn.addEventListener('click', () => changeMonth(1));
@@ -201,11 +205,14 @@ function onCardRefresh(updatedTask) {
     const cardEl = document.querySelector(`.calendar-task-card[data-task-id="${updatedTask.id}"]`);
     if (cardEl) {
         updateCardInDOM(cardEl, updatedTask);
+    } else {
+        loadCalendar(year, month);
     }
 }
 
 function populateTasks(daysData) {
     const taskContainers = document.querySelectorAll('.calendar-day-tasks');
+    let hasAnyTasks = false;
 
     for (const tc of taskContainers) {
         const dateKey = tc.dataset.date;
@@ -215,6 +222,7 @@ function populateTasks(daysData) {
             continue;
         }
 
+        hasAnyTasks = true;
         const visible = tasks.slice(0, MAX_VISIBLE_CARDS);
         for (const task of visible) {
             const card = renderTaskCard(task, onCardRefresh);
@@ -229,17 +237,25 @@ function populateTasks(daysData) {
             tc.appendChild(more);
         }
     }
+
+    if (!hasAnyTasks) {
+        const grid = document.querySelector('.calendar-grid');
+        if (grid) {
+            const empty = document.createElement('div');
+            empty.className = 'calendar-empty';
+            empty.textContent = 'В этом месяце задач нет. Создайте шаблон в админке, чтобы начать.';
+            grid.appendChild(empty);
+        }
+    }
 }
 
 function showLoading() {
+    clearContainer();
     const container = getOrCreateContainer();
-    let loader = container.querySelector('.calendar-loading');
-    if (!loader) {
-        loader = document.createElement('div');
-        loader.className = 'calendar-loading';
-        container.appendChild(loader);
-    }
+    const loader = document.createElement('div');
+    loader.className = 'calendar-loading';
     loader.textContent = 'Загрузка…';
+    container.appendChild(loader);
 }
 
 function hideLoading() {
@@ -250,31 +266,44 @@ function hideLoading() {
     }
 }
 
-function showError(message, onRetry) {
+function showError(message) {
     const grid = document.querySelector('.calendar-grid');
     if (grid) {
         grid.innerHTML = '';
-    } else {
-        const container = getOrCreateContainer();
-        const g = document.createElement('div');
-        g.className = 'calendar-grid';
-        container.appendChild(g);
     }
 
-    const gridEl = document.querySelector('.calendar-grid');
+    const gridEl = document.querySelector('.calendar-grid') || createGrid();
     const err = document.createElement('div');
     err.className = 'calendar-error';
 
     const msg = document.createElement('span');
-    msg.textContent = message;
+    msg.textContent = message || 'Не удалось загрузить календарь';
     err.appendChild(msg);
+
+    const hint = document.createElement('span');
+    hint.style.fontSize = '0.8rem';
+    hint.style.color = 'var(--text-muted)';
+    hint.textContent = 'Проверьте, что бэкенд запущен и доступен';
+    err.appendChild(hint);
 
     const btn = document.createElement('button');
     btn.textContent = 'Повторить';
-    btn.addEventListener('click', onRetry);
+    btn.setAttribute('aria-label', 'Повторить загрузку');
+    btn.addEventListener('click', () => {
+        const { year, month } = getCurrentMonth();
+        loadCalendar(year, month);
+    });
     err.appendChild(btn);
 
     gridEl.appendChild(err);
+}
+
+function createGrid() {
+    const container = getOrCreateContainer();
+    const grid = document.createElement('div');
+    grid.className = 'calendar-grid';
+    container.appendChild(grid);
+    return grid;
 }
 
 async function loadCalendar(year, month) {
@@ -284,7 +313,7 @@ async function loadCalendar(year, month) {
         const data = await get(`/calendar?year=${year}&month=${month}`);
 
         setCurrentMonth(year, month);
-        setUsers(data.users);
+        setUsers(data.users || []);
 
         const daysData = data.days || {};
         setCalendarTasks(`${year}-${month}`, daysData);
@@ -295,8 +324,9 @@ async function loadCalendar(year, month) {
         hideLoading();
     } catch (err) {
         hideLoading();
-        const msg = err?.message || 'Не удалось загрузить данные';
-        showError(msg || 'Не удалось загрузить календарь', () => loadCalendar(year, month));
+        const msg = err?.message || 'Не удалось подключиться к серверу';
+        if (err.name === 'AbortError') return;
+        showError(msg);
     }
 }
 
@@ -308,12 +338,14 @@ function changeMonth(delta) {
     if (m > 12) { m = 1; y++; }
     setCurrentMonth(y, m);
     clearCalendarCache();
+    closeAllDropdowns();
     loadCalendar(y, m);
 }
 
 function goToToday() {
     const d = new Date();
     clearCalendarCache();
+    closeAllDropdowns();
     loadCalendar(d.getFullYear(), d.getMonth() + 1);
 }
 

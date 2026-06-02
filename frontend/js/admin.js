@@ -35,14 +35,24 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadAllData() {
     try {
-        const [usersRes] = await Promise.all([
-            get('/users')
-        ]);
+        const usersRes = await get('/users');
         allUsers = usersRes.users || [];
         setUsers(allUsers);
         renderUsers();
     } catch (e) {
-        showToast('Не удалось загрузить данные');
+        const container = document.getElementById('admin-users');
+        if (container) {
+            container.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">Пользователи</h2>
+                </div>
+                <div class="network-error">
+                    <p>Не удалось подключиться к серверу</p>
+                    <button id="retry-btn">Повторить</button>
+                </div>`;
+            const btn = container.querySelector('#retry-btn');
+            if (btn) btn.addEventListener('click', loadAllData);
+        }
     }
 }
 
@@ -52,7 +62,19 @@ async function loadTemplates() {
         allTemplates = res.templates || [];
         renderTemplates();
     } catch (e) {
-        showToast('Не удалось загрузить шаблоны');
+        const container = document.getElementById('admin-templates');
+        if (container) {
+            container.innerHTML = `
+                <div class="section-header">
+                    <h2 class="section-title">Шаблоны задач</h2>
+                </div>
+                <div class="network-error">
+                    <p>Не удалось подключиться к серверу</p>
+                    <button id="retry-btn">Повторить</button>
+                </div>`;
+            const btn = container.querySelector('#retry-btn');
+            if (btn) btn.addEventListener('click', loadTemplates);
+        }
     }
 }
 
@@ -88,8 +110,12 @@ function switchTab(tab) {
     const el = document.getElementById(`admin-${tab}`);
     if (el) el.classList.add('active');
 
-    if (tab === 'templates' && allTemplates.length === 0) {
-        loadTemplates();
+    if (tab === 'templates') {
+        if (allTemplates.length === 0) {
+            loadTemplates();
+        } else {
+            renderTemplates();
+        }
     }
 }
 

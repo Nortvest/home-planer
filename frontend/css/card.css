@@ -16,7 +16,7 @@
     line-height: 1;
     color: var(--text-muted);
     background: transparent;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
     z-index: 2;
     padding: 0;
     opacity: 0;
@@ -35,6 +35,11 @@
     background-color: color-mix(in srgb, var(--text-primary) 20%, transparent);
 }
 
+.card-actions-btn:focus-visible {
+    opacity: 1;
+    outline-offset: 1px;
+}
+
 .card-dropdown {
     position: absolute;
     top: 100%;
@@ -47,6 +52,7 @@
     box-shadow: var(--shadow-md);
     padding: 0.25rem 0;
     display: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .card-dropdown.open {
@@ -74,7 +80,12 @@
 }
 
 .card-dropdown-item:active {
-    background-color: color-mix(in srgb, var(--text-primary) 10%, var(--bg-hover));
+    background-color: var(--border-color);
+}
+
+.card-dropdown-item:focus-visible {
+    background-color: var(--bg-hover);
+    outline: none;
 }
 
 .card-dropdown-item.danger {
@@ -98,6 +109,7 @@
     box-shadow: var(--shadow-md);
     padding: 0.25rem 0;
     display: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .card-reassign-submenu.open {
@@ -142,13 +154,6 @@
     color: var(--danger);
 }
 
-.card-actions-btn-mobile {
-    opacity: 1;
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.8rem;
-}
-
 @media (max-width: 600px) {
     .card-actions-btn {
         opacity: 1;
@@ -163,11 +168,5 @@
 
     .card-reassign-submenu {
         min-width: 130px;
-    }
-}
-
-@media (prefers-color-scheme: dark) {
-    .card-dropdown {
-        border-color: color-mix(in srgb, var(--border-color) 80%, white);
     }
 }

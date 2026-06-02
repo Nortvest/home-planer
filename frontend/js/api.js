@@ -2,7 +2,7 @@ import { API_BASE } from './config.js';
 import { showToast } from './ui/toast.js';
 
 let currentAbortController = null;
-const REQUEST_TIMEOUT = 10000;
+const REQUEST_TIMEOUT = 15000;
 
 async function request(path, options = {}) {
     const url = `${API_BASE}${path}`;
@@ -42,17 +42,20 @@ async function request(path, options = {}) {
 
         return await response.json();
     } catch (err) {
+        clearTimeout(timer);
+
         if (err.name === 'AbortError') {
-            clearTimeout(timer);
             throw err;
+        }
+
+        if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed'))){
+            throw new Error('Сервер недоступен. Проверьте подключение и запущен ли бэкенд');
         }
 
         if (err instanceof Error) {
             showToast(err.message);
         }
         throw err;
-    } finally {
-        clearTimeout(timer);
     }
 }
 

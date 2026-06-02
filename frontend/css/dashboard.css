@@ -10,6 +10,7 @@
     border-radius: var(--radius-md);
     padding: 1.25rem;
     box-shadow: var(--shadow-sm);
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dash-card.full-width {
@@ -43,6 +44,7 @@
     padding: 1rem 0.5rem;
     border-radius: var(--radius-sm);
     background-color: var(--bg-hover);
+    transition: background-color 0.2s ease;
 }
 
 .stat-value {
@@ -96,6 +98,7 @@
 .balance-name {
     font-weight: 600;
     font-size: 0.95rem;
+    color: var(--text-primary);
 }
 
 .balance-detail {
@@ -106,6 +109,7 @@
 .balance-sp {
     font-size: 1.3rem;
     font-weight: 700;
+    color: var(--text-primary);
     white-space: nowrap;
 }
 
@@ -120,6 +124,27 @@
     height: auto;
 }
 
+.chart-container svg text {
+    fill: var(--text-primary);
+}
+
+.chart-container svg .chart-val {
+    fill: var(--text-primary);
+    font-weight: 600;
+}
+
+.chart-container svg .chart-label {
+    fill: var(--text-secondary);
+}
+
+.chart-container svg .chart-axis {
+    stroke: var(--border-color);
+}
+
+.chart-container svg .chart-max-label {
+    fill: var(--text-muted);
+}
+
 .task-list {
     list-style: none;
 }
@@ -131,6 +156,7 @@
     padding: 0.5rem 0;
     border-bottom: 1px solid var(--border-color);
     font-size: 0.9rem;
+    color: var(--text-primary);
 }
 
 .task-list-item:last-child {
@@ -169,6 +195,7 @@
     padding: 0.15rem 0.45rem;
     border-radius: var(--radius-sm);
     white-space: nowrap;
+    color: var(--text-secondary);
 }
 
 .empty-state {
@@ -188,6 +215,7 @@
     text-align: center;
     padding: 2rem 1rem;
     color: var(--danger);
+    grid-column: 1 / -1;
 }
 
 .network-error button {
@@ -198,10 +226,11 @@
     color: var(--text-on-accent);
     font-weight: 600;
     font-size: 0.9rem;
+    transition: background-color 0.15s ease;
 }
 
 .network-error button:hover {
-    opacity: 0.85;
+    background-color: var(--accent-hover);
 }
 
 @media (max-width: 900px) {
@@ -237,5 +266,17 @@
 
     .stat-label {
         margin-top: 0;
+    }
+
+    .dash-card {
+        padding: 1rem;
+    }
+
+    .balance-color {
+        height: 2rem;
+    }
+
+    .balance-sp {
+        font-size: 1.1rem;
     }
 }
