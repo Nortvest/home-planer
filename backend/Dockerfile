@@ -3,9 +3,8 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install uv
-RUN apt-get update && apt-get install -y --no-install-recommends curl && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    ln -s /root/.cargo/bin/uv /usr/local/bin/uv
+RUN python3 -m ensurepip --upgrade && \
+    python3 -m pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
 
