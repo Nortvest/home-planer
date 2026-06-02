@@ -1,3 +1,352 @@
 import { setupTheme } from './theme.js';
+import { get } from './api.js';
+import {
+    setUsers,
+    getUsers,
+    setCurrentMonth,
+    getCurrentMonth,
+    setCalendarTasks,
+    getCalendarTasks,
+    clearCalendarCache,
+} from './state.js';
 
 setupTheme();
+
+const MAX_VISIBLE_CARDS = 3;
+
+const MONTH_NAMES = [
+    'Январь', 'Февраль', 'Март', 'Апрель',
+    'Май', 'Июнь', 'Июль', 'Август',
+    'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+];
+
+const WEEKDAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+const appEl = document.getElementById('app');
+
+function todayKey() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function isToday(year, month, day) {
+    const t = new Date();
+    return t.getFullYear() === year && t.getMonth() + 1 === month && t.getDate() === day;
+}
+
+function isOverdueDate(dateStr) {
+    const today = todayKey();
+    return dateStr < today;
+}
+
+function daysInMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+}
+
+function firstDayOfMonth(year, month) {
+    let dow = new Date(year, month - 1, 1).getDay();
+    return dow === 0 ? 6 : dow - 1;
+}
+
+function getOrCreateContainer() {
+    let container = appEl.querySelector('.calendar-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'calendar-container';
+        appEl.appendChild(container);
+    }
+    return container;
+}
+
+function renderNav(year, month) {
+    const container = getOrCreateContainer();
+    let nav = container.querySelector('.calendar-nav');
+    if (!nav) {
+        nav = document.createElement('div');
+        nav.className = 'calendar-nav';
+        container.insertBefore(nav, container.firstChild);
+    }
+
+    nav.innerHTML = '';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'nav-prev';
+    prevBtn.textContent = '‹';
+    prevBtn.title = 'Предыдущий месяц';
+    prevBtn.setAttribute('aria-label', 'Предыдущий месяц');
+    prevBtn.addEventListener('click', () => changeMonth(-1));
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'nav-next';
+    nextBtn.textContent = '›';
+    nextBtn.title = 'Следующий месяц';
+    nextBtn.setAttribute('aria-label', 'Следующий месяц');
+    nextBtn.addEventListener('click', () => changeMonth(1));
+
+    const todayBtn = document.createElement('button');
+    todayBtn.className = 'nav-today';
+    todayBtn.textContent = 'Сегодня';
+    todayBtn.title = 'Перейти к сегодняшнему месяцу';
+    todayBtn.setAttribute('aria-label', 'Сегодня');
+    todayBtn.style.fontWeight = '600';
+    todayBtn.style.fontSize = '0.85rem';
+    todayBtn.style.width = 'auto';
+    todayBtn.style.padding = '0 0.6rem';
+    todayBtn.addEventListener('click', goToToday);
+
+    const title = document.createElement('span');
+    title.className = 'calendar-month-title';
+    title.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+
+    nav.appendChild(prevBtn);
+    nav.appendChild(todayBtn);
+    nav.appendChild(nextBtn);
+    nav.appendChild(title);
+}
+
+function buildGrid(year, month) {
+    const container = getOrCreateContainer();
+    let grid = container.querySelector('.calendar-grid');
+    if (!grid) {
+        grid = document.createElement('div');
+        grid.className = 'calendar-grid';
+        container.appendChild(grid);
+    }
+
+    grid.innerHTML = '';
+
+    for (const name of WEEKDAY_NAMES) {
+        const hc = document.createElement('div');
+        hc.className = 'calendar-header-cell';
+        hc.textContent = name;
+        grid.appendChild(hc);
+    }
+
+    const fdow = firstDayOfMonth(year, month);
+    const dim = daysInMonth(year, month);
+    const today = todayKey();
+
+    const prevMonth = month === 1 ? 12 : month - 1;
+    const prevYear = month === 1 ? year - 1 : year;
+    const pdim = daysInMonth(prevYear, prevMonth);
+
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+
+    const totalCells = Math.ceil((fdow + dim) / 7) * 7;
+
+    for (let i = 0; i < totalCells; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day-cell';
+
+        let cellYear, cellMonth, cellDay, dateStr, isOtherMonth = false;
+
+        if (i < fdow) {
+            const day = pdim - fdow + 1 + i;
+            cellYear = prevYear;
+            cellMonth = prevMonth;
+            cellDay = day;
+            isOtherMonth = true;
+        } else if (i >= fdow + dim) {
+            const day = i - fdow - dim + 1;
+            cellYear = nextYear;
+            cellMonth = nextMonth;
+            cellDay = day;
+            isOtherMonth = true;
+        } else {
+            const day = i - fdow + 1;
+            cellYear = year;
+            cellMonth = month;
+            cellDay = day;
+        }
+
+        dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(cellDay).padStart(2, '0')}`;
+
+        if (isOtherMonth) {
+            cell.classList.add('other-month');
+        }
+
+        if (dateStr === today) {
+            cell.classList.add('today');
+        }
+
+        if (!isOtherMonth && isOverdueDate(dateStr)) {
+            cell.classList.add('overdue-day');
+        }
+
+        const numEl = document.createElement('span');
+        numEl.className = 'calendar-day-number';
+        numEl.textContent = cellDay;
+        cell.appendChild(numEl);
+
+        const tasksEl = document.createElement('div');
+        tasksEl.className = 'calendar-day-tasks';
+        tasksEl.dataset.date = dateStr;
+        cell.appendChild(tasksEl);
+
+        grid.appendChild(cell);
+    }
+}
+
+function getUserColor(user) {
+    return user?.color || '#999999';
+}
+
+function renderTaskCard(task, users) {
+    const card = document.createElement('div');
+    card.className = 'calendar-task-card';
+
+    if (task.status === 'done') {
+        card.classList.add('done');
+    } else if (task.status === 'overdue') {
+        card.classList.add('overdue');
+    }
+
+    const assignee = task.assignee;
+    const color = assignee ? getUserColor(assignee) : '#999999';
+
+    const bar = document.createElement('div');
+    bar.className = 'calendar-task-color-bar';
+    bar.style.backgroundColor = color;
+    card.appendChild(bar);
+
+    const content = document.createElement('div');
+    content.className = 'calendar-task-content';
+
+    const title = document.createElement('div');
+    title.className = 'calendar-task-title';
+    title.textContent = task.title;
+    content.appendChild(title);
+
+    const sp = document.createElement('span');
+    sp.className = 'calendar-task-sp';
+    const spVal = task.sp_cost_current ?? task.sp_cost_at_completion ?? 0;
+    sp.textContent = `SP ${spVal}`;
+    content.appendChild(sp);
+
+    card.appendChild(content);
+
+    return card;
+}
+
+function populateTasks(daysData) {
+    const taskContainers = document.querySelectorAll('.calendar-day-tasks');
+
+    for (const tc of taskContainers) {
+        const dateKey = tc.dataset.date;
+        const tasks = daysData[dateKey] || [];
+
+        if (tasks.length === 0) {
+            continue;
+        }
+
+        const visible = tasks.slice(0, MAX_VISIBLE_CARDS);
+        for (const task of visible) {
+            const card = renderTaskCard(task, getUsers());
+            tc.appendChild(card);
+        }
+
+        if (tasks.length > MAX_VISIBLE_CARDS) {
+            const more = document.createElement('div');
+            more.className = 'calendar-more-count';
+            more.textContent = `+${tasks.length - MAX_VISIBLE_CARDS} ещё`;
+            tc.appendChild(more);
+        }
+    }
+}
+
+function showLoading() {
+    const container = getOrCreateContainer();
+    let loader = container.querySelector('.calendar-loading');
+    if (!loader) {
+        loader = document.createElement('div');
+        loader.className = 'calendar-loading';
+        container.appendChild(loader);
+    }
+    loader.textContent = 'Загрузка…';
+}
+
+function hideLoading() {
+    const container = getOrCreateContainer();
+    const loader = container.querySelector('.calendar-loading');
+    if (loader) {
+        loader.remove();
+    }
+}
+
+function showError(message, onRetry) {
+    const grid = document.querySelector('.calendar-grid');
+    if (grid) {
+        grid.innerHTML = '';
+    } else {
+        const container = getOrCreateContainer();
+        const g = document.createElement('div');
+        g.className = 'calendar-grid';
+        container.appendChild(g);
+    }
+
+    const gridEl = document.querySelector('.calendar-grid');
+    const err = document.createElement('div');
+    err.className = 'calendar-error';
+
+    const msg = document.createElement('span');
+    msg.textContent = message;
+    err.appendChild(msg);
+
+    const btn = document.createElement('button');
+    btn.textContent = 'Повторить';
+    btn.addEventListener('click', onRetry);
+    err.appendChild(btn);
+
+    gridEl.appendChild(err);
+}
+
+async function loadCalendar(year, month) {
+    showLoading();
+
+    try {
+        const data = await get(`/calendar?year=${year}&month=${month}`);
+
+        setCurrentMonth(year, month);
+        setUsers(data.users);
+
+        const daysData = data.days || {};
+        setCalendarTasks(`${year}-${month}`, daysData);
+
+        renderNav(year, month);
+        buildGrid(year, month);
+        populateTasks(daysData);
+        hideLoading();
+    } catch (err) {
+        hideLoading();
+        const msg = err?.message || 'Не удалось загрузить данные';
+        showError(msg || 'Не удалось загрузить календарь', () => loadCalendar(year, month));
+    }
+}
+
+function changeMonth(delta) {
+    const { year, month } = getCurrentMonth();
+    let m = month + delta;
+    let y = year;
+    if (m < 1) { m = 12; y--; }
+    if (m > 12) { m = 1; y++; }
+    setCurrentMonth(y, m);
+    clearCalendarCache();
+    loadCalendar(y, m);
+}
+
+function goToToday() {
+    const d = new Date();
+    clearCalendarCache();
+    loadCalendar(d.getFullYear(), d.getMonth() + 1);
+}
+
+function init() {
+    const { year, month } = getCurrentMonth();
+    loadCalendar(year, month);
+}
+
+init();
