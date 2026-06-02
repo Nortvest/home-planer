@@ -2,11 +2,10 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
-
 # Install uv
-RUN pip install --no-cache-dir uv
+RUN apt-get update && apt-get install -y --no-install-recommends curl && \
+    curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    ln -s /root/.cargo/bin/uv /usr/local/bin/uv
 
 COPY pyproject.toml uv.lock ./
 
