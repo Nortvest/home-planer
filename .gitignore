@@ -1,0 +1,41 @@
+# Opencode
+.opencode
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.dylib
+*.dll
+
+# Virtual environment (uv)
+backend/.venv/
+.venv/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.gcov
+
+# Logs
+*.log
