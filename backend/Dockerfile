@@ -3,8 +3,7 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Install uv
-RUN python -m ensurepip --upgrade && \
-    python -m pip install --no-cache-dir uv
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
 
