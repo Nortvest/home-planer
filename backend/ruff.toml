@@ -53,6 +53,21 @@ ignore = [
     "SLF001",
     "PLR2004",
     "DTZ005",
+    # Tests may use local imports, mock objects, and non-timezone-aware dates
+    "PLC0415",
+    "DTZ001",
+    "DTZ011",
+    "ANN202",
+    "ANN204",
+    "C402",
+    "ARG002",
+    "A002",
+    "SIM108",
+    "PLR6201",
+    "RUF059",
+    "F841",
+    "E501",
+    "PLR0915",
 ]
 
 [lint.flake8-tidy-imports.banned-api]

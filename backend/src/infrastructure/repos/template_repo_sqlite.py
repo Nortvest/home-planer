@@ -83,7 +83,7 @@ class SqliteTemplateRepository(TemplateRepository):
                 recurrence_type,
                 recurrence_params,
                 default_assignee_id,
-                active,
+                active=active,
             )
             row = conn.execute(
                 "SELECT * FROM task_template WHERE id = ?", (template_id,),
@@ -128,7 +128,7 @@ class SqliteTemplateRepository(TemplateRepository):
         )
 
 
-def _update_templ_fields(  # noqa: PLR0913, PLR0917
+def _update_templ_fields(  # noqa: PLR0912, PLR0913, PLR0917
     conn: sqlite3.Connection,
     template_id: int,
     title: str | None,
@@ -137,6 +137,7 @@ def _update_templ_fields(  # noqa: PLR0913, PLR0917
     recurrence_type: str | None,
     recurrence_params: dict[str, int] | None,
     default_assignee_id: int | None,
+    *,
     active: bool | None,
 ) -> None:
     for field, value in (

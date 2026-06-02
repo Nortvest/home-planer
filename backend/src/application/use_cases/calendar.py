@@ -10,7 +10,7 @@ from src.application.ports import (
     UserRepository,
 )
 from src.application.use_cases.instances import _to_instance_dto
-from src.domain.entities import TaskInstance
+from src.domain.entities import TaskInstance, TaskTemplate
 from src.domain.services import generate_recurrence_dates
 
 
@@ -29,7 +29,7 @@ class MaterializerUseCase:
         active_templates = self._template_repo.list_active()
         for tpl in active_templates:
             dates = generate_recurrence_dates(tpl, start, end)
-            valid_dates = set(d for d in dates if d >= today)
+            valid_dates = {d for d in dates if d >= today}
 
             for d in dates:
                 if d < today:
@@ -48,7 +48,8 @@ class MaterializerUseCase:
             self._cleanup_orphaned(tpl, start, end, today, valid_dates)
 
     def _cleanup_orphaned(
-        self, tpl, start: date, end: date, today: date, valid_dates: set,
+        self, tpl: TaskTemplate, start: date, end: date,
+        today: date, valid_dates: set[date],
     ) -> None:
         instances = self._instance_repo.list_by_date_range(start, end)
         for inst in instances:

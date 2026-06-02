@@ -1,12 +1,20 @@
 """Smoke-test: полный цикл — создать пользователя, шаблон, инстанс, закрыть, переназначить, проверить баланс."""
 from datetime import date, datetime, timezone
+from typing import TypedDict
 
-from src.domain.entities import TaskInstance, TaskTransfer
+from src.domain.entities import TaskInstance, TaskTemplate, TaskTransfer, User
 from src.domain.services import compute_balance
 from src.infrastructure.repos.instance_repo_sqlite import SqliteInstanceRepository
 from src.infrastructure.repos.template_repo_sqlite import SqliteTemplateRepository
 from src.infrastructure.repos.transfer_repo_sqlite import SqliteTransferRepository
 from src.infrastructure.repos.user_repo_sqlite import SqliteUserRepository
+
+
+class _Repos(TypedDict):
+    user_repo: SqliteUserRepository
+    tmpl_repo: SqliteTemplateRepository
+    inst_repo: SqliteInstanceRepository
+    xfer_repo: SqliteTransferRepository
 
 
 class TestSmoke:
@@ -17,17 +25,13 @@ class TestSmoke:
         tmpl = _create_template(repos["tmpl_repo"], u1.id)
         inst = _create_instance(repos["inst_repo"], tmpl, u1.id)
 
-        _reassign_to_user(
-            repos["xfer_repo"], repos["inst_repo"],
-            inst, u1.id, u2.id,
-        )
+        _reassign_to_user(repos["xfer_repo"], repos["inst_repo"], inst, u1.id, u2.id)
         _complete_instance(repos["inst_repo"], inst, u2.id)
-
         _verify_balance(repos["inst_repo"], u2.id)
-        _verify_post_completion(repos, u2)
+        _verify_post_completion(repos["inst_repo"], repos["user_repo"], u2)
 
 
-def _setup_repos(db_path: str) -> dict:
+def _setup_repos(db_path: str) -> _Repos:
     return {
         "user_repo": SqliteUserRepository(db_path),
         "tmpl_repo": SqliteTemplateRepository(db_path),
@@ -36,11 +40,11 @@ def _setup_repos(db_path: str) -> dict:
     }
 
 
-def _create_users(user_repo: SqliteUserRepository) -> tuple:
+def _create_users(user_repo: SqliteUserRepository) -> tuple[User, User]:
     return user_repo.create("Иван", "#FF0000"), user_repo.create("Мария", "#00FF00")
 
 
-def _create_template(tmpl_repo: SqliteTemplateRepository, assignee_id: int) -> TaskInstance:
+def _create_template(tmpl_repo: SqliteTemplateRepository, assignee_id: int) -> TaskTemplate:
     return tmpl_repo.create(
         title="Мусор",
         description="Вынести мусор каждый понедельник",
@@ -53,7 +57,7 @@ def _create_template(tmpl_repo: SqliteTemplateRepository, assignee_id: int) -> T
 
 def _create_instance(
     inst_repo: SqliteInstanceRepository,
-    tmpl: TaskInstance,
+    tmpl: TaskTemplate,
     assignee_id: int,
 ) -> TaskInstance:
     inst = TaskInstance(
@@ -78,7 +82,7 @@ def _reassign_to_user(
         instance_id=inst.id,
         from_user_id=from_id,
         to_user_id=to_id,
-        transferred_at=datetime.now(timezone.utc),
+        transferred_at=datetime.now(tz=timezone.utc),
     )
     xfer = xfer_repo.create(transfer)
     assert xfer.to_user_id == to_id
@@ -130,10 +134,14 @@ def _verify_balance(
     assert count == 1
 
 
-def _verify_post_completion(repos: dict, u2: TaskInstance) -> None:
-    assert repos["user_repo"].has_active_instances(u2.id) is False
-    overdue = repos["inst_repo"].list_overdue(date(2026, 6, 15))
+def _verify_post_completion(
+    inst_repo: SqliteInstanceRepository,
+    user_repo: SqliteUserRepository,
+    u2: User,
+) -> None:
+    assert user_repo.has_active_instances(u2.id) is False
+    overdue = inst_repo.list_overdue(date(2026, 6, 15))
     assert len(overdue) == 0
-    recent = repos["inst_repo"].list_completed_recent(5)
+    recent = inst_repo.list_completed_recent(5)
     assert len(recent) == 1
     assert recent[0].title == "Мусор"

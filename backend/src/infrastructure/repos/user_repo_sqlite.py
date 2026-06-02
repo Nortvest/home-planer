@@ -93,19 +93,19 @@ class SqliteUserRepository(UserRepository):
     def delete(self, user_id: int) -> None:
         with get_transaction(self._db_path) as conn:
             conn.execute(
-                'DELETE FROM task_transfer WHERE from_user_id = ?', (user_id,),
+                "DELETE FROM task_transfer WHERE from_user_id = ?", (user_id,),
             )
             conn.execute(
-                'DELETE FROM task_transfer WHERE to_user_id = ?', (user_id,),
+                "DELETE FROM task_transfer WHERE to_user_id = ?", (user_id,),
             )
             conn.execute(
-                'DELETE FROM task_instance WHERE assignee_id = ?', (user_id,),
+                "DELETE FROM task_instance WHERE assignee_id = ?", (user_id,),
             )
             conn.execute(
-                'DELETE FROM task_instance WHERE completed_by_id = ? AND completed_by_id IS NOT NULL', (user_id,),
+                "DELETE FROM task_instance WHERE completed_by_id = ? AND completed_by_id IS NOT NULL", (user_id,),
             )
             conn.execute(
-                'UPDATE task_template SET default_assignee_id = NULL WHERE default_assignee_id = ?', (user_id,),
+                "UPDATE task_template SET default_assignee_id = NULL WHERE default_assignee_id = ?", (user_id,),
             )
             conn.execute(
                 'DELETE FROM "user" WHERE id = ?', (user_id,),

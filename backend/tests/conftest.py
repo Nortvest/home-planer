@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from pathlib import Path
 
 import pytest
@@ -7,7 +8,7 @@ from src.infrastructure.settings import Settings, reset_settings, set_settings
 
 
 @pytest.fixture
-def db_path(tmp_path: Path) -> str:
+def db_path(tmp_path: Path) -> Generator[str, None, None]:
     """Возвращает путь к временной БД на диске."""
     path = str(tmp_path / "test.db")
     s = Settings(DB_PATH=path)

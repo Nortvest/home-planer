@@ -1,8 +1,8 @@
 """FastAPI-приложение: точка входа."""
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from src.domain.exceptions import DomainError
 from src.infrastructure.db.migrations import init_if_needed
@@ -23,19 +23,14 @@ app = FastAPI(title="Home Planner API")
 async def domain_error_handler(_request: Request, exc: DomainError) -> JSONResponse:
     error_code = "internal_error"
     status_code = 500
-    if type(exc).__name__ == "UserNotFoundError":
+    name = type(exc).__name__
+    if name in {"UserNotFoundError", "TemplateNotFoundError", "InstanceNotFoundError"}:
         status_code, error_code = 404, "not_found"
-    elif type(exc).__name__ == "TemplateNotFoundError":
-        status_code, error_code = 404, "not_found"
-    elif type(exc).__name__ == "InstanceNotFoundError":
-        status_code, error_code = 404, "not_found"
-    elif type(exc).__name__ == "InstanceAlreadyCompletedError":
+    elif name in {"InstanceAlreadyCompletedError", "DuplicateUserNameError"}:
         status_code, error_code = 409, "conflict"
-    elif type(exc).__name__ == "UserHasActiveTasksError":
+    elif name == "UserHasActiveTasksError":
         status_code, error_code = 409, "has_active_tasks"
-    elif type(exc).__name__ == "DuplicateUserNameError":
-        status_code, error_code = 409, "conflict"
-    elif type(exc).__name__ == "InvalidColorError":
+    elif name == "InvalidColorError":
         status_code, error_code = 400, "validation_error"
 
     return JSONResponse(
@@ -59,7 +54,7 @@ def startup() -> None:
 
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str]:
     return {"status": "ok"}
 
 

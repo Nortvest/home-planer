@@ -11,8 +11,8 @@ from src.application.ports import (
 from src.domain.entities import TaskInstance, TaskTransfer
 from src.domain.exceptions import (
     InstanceAlreadyCompletedError,
-    InstanceNotFoundError,
     InstanceNotCompletedError,
+    InstanceNotFoundError,
     UserNotFoundError,
 )
 from src.domain.services import compute_status

@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from src.application.dtos import TaskInstanceDTO, TaskTransferDTO
 from src.application.use_cases import CompleteInstanceUseCase, ReassignInstanceUseCase, UncompleteInstanceUseCase
 from src.application.use_cases.instances import _get_transfers_dto, _to_instance_dto
-from src.infrastructure.repos.clock_adapter import SystemClock
 from src.domain.exceptions import (
     DomainError,
     InstanceAlreadyCompletedError,
-    InstanceNotFoundError,
     InstanceNotCompletedError,
+    InstanceNotFoundError,
     UserNotFoundError,
 )
+from src.infrastructure.repos.clock_adapter import SystemClock
 from src.infrastructure.repos.instance_repo_sqlite import SqliteInstanceRepository
 from src.infrastructure.repos.template_repo_sqlite import SqliteTemplateRepository
 from src.infrastructure.repos.transfer_repo_sqlite import SqliteTransferRepository
