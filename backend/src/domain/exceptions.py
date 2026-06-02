@@ -28,3 +28,7 @@ class InstanceAlreadyCompletedError(DomainError):
 
 class DuplicateUserNameError(DomainError):
     """Имя пользователя уже занято."""
+
+
+class InstanceNotCompletedError(DomainError):
+    """Попытка отменить выполнение незавершённого инстанса."""

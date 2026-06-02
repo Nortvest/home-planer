@@ -1,8 +1,6 @@
-import { post } from './api.js';
+import { post, get } from './api.js';
 import {
     getUsers,
-    updateTaskInState,
-    getCurrentMonth,
 } from './state.js';
 
 let activeDropdownEl = null;
@@ -76,10 +74,18 @@ function renderTaskCard(task, onCardRefresh) {
     const dropdown = document.createElement('div');
     dropdown.className = 'card-dropdown';
     dropdown.setAttribute('role', 'menu');
-    card.appendChild(dropdown);
+    dropdown._resetPosition = () => {
+        dropdown.style.position = '';
+        dropdown.style.top = '';
+        dropdown.style.left = '';
+        dropdown.style.zIndex = '';
+    };
+    card._dropdown = dropdown;
 
     if (task.status !== 'done') {
         buildDropdownItems(dropdown, task, onCardRefresh);
+    } else {
+        buildDoneDropdownItems(dropdown, task, onCardRefresh);
     }
 
     actionsBtn.addEventListener('click', (e) => {
@@ -93,6 +99,52 @@ function renderTaskCard(task, onCardRefresh) {
     });
 
     return card;
+}
+
+function buildDoneDropdownForRefresh(card, actionsBtn, task) {
+    const existingDropdown = card.querySelector('.card-dropdown');
+    if (existingDropdown) {
+        existingDropdown.remove();
+    }
+    const dropdown = document.createElement('div');
+    dropdown.className = 'card-dropdown';
+    dropdown.setAttribute('role', 'menu');
+    dropdown._resetPosition = () => {
+        dropdown.style.position = '';
+        dropdown.style.top = '';
+        dropdown.style.left = '';
+        dropdown.style.zIndex = '';
+    };
+    buildDoneDropdownItems(dropdown, task, card._onCardRefresh);
+    card._dropdown = dropdown;
+
+    actionsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdown(card, dropdown);
+    });
+}
+
+function buildDoneDropdownItems(dropdown, task, onCardRefresh) {
+    const detailItem = document.createElement('button');
+    detailItem.className = 'card-dropdown-item';
+    detailItem.textContent = 'Открыть детали';
+    detailItem.setAttribute('role', 'menuitem');
+    detailItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTaskDetails(task.id, onCardRefresh);
+    });
+    dropdown.appendChild(detailItem);
+
+    const uncompleteItem = document.createElement('button');
+    uncompleteItem.className = 'card-dropdown-item danger';
+    uncompleteItem.textContent = 'Отменить выполнение';
+    uncompleteItem.setAttribute('role', 'menuitem');
+    uncompleteItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        uncompleteTask(task.id, onCardRefresh);
+        closeAllDropdowns();
+    });
+    dropdown.appendChild(uncompleteItem);
 }
 
 function buildDropdownItems(dropdown, task, onCardRefresh) {
@@ -147,15 +199,42 @@ function buildDropdownItems(dropdown, task, onCardRefresh) {
     }
 
     if (users.length > 1) {
+        let subHideTimer = null;
+
+        let subMeasuredWidth = null;
         const showSub = () => {
             if (!dropdown.classList.contains('open')) return;
+            clearTimeout(subHideTimer);
+            const rect = reassignItem.getBoundingClientRect();
+            if (!subMeasuredWidth) {
+                submenu.style.visibility = 'hidden';
+                submenu.style.display = 'block';
+                submenu.style.position = 'fixed';
+                submenu.style.top = '0';
+                submenu.style.left = '0';
+                subMeasuredWidth = submenu.offsetWidth;
+                submenu.style.visibility = '';
+                submenu.style.display = '';
+                submenu.style.position = '';
+                submenu.style.top = '';
+                submenu.style.left = '';
+            }
             submenu.classList.add('open');
+            submenu.style.position = 'fixed';
+            submenu.style.top = `${rect.top}px`;
+            submenu.style.left = `${rect.left - subMeasuredWidth}px`;
+            submenu.style.zIndex = '10000';
         };
         const hideSub = () => {
-            submenu.classList.remove('open');
+            subHideTimer = setTimeout(() => {
+                subHideTimer = null;
+                clearSubmenuStyles(submenu);
+            }, 100);
         };
 
-        reassignItem.addEventListener('mouseenter', showSub);
+        reassignItem.addEventListener('mouseenter', () => {
+            if (dropdown.classList.contains('open')) showSub();
+        });
         reassignItem.addEventListener('click', (e) => {
             e.stopPropagation();
             if (submenu.classList.contains('open')) {
@@ -165,7 +244,10 @@ function buildDropdownItems(dropdown, task, onCardRefresh) {
             }
         });
 
-        dropdown.addEventListener('mouseleave', hideSub);
+        submenu.addEventListener('mouseenter', () => {
+            clearTimeout(subHideTimer);
+        });
+        submenu.addEventListener('mouseleave', hideSub);
     }
 
     dropdown.appendChild(createSeparator());
@@ -215,8 +297,135 @@ async function reassignTask(taskId, toUserId, onCardRefresh) {
     }
 }
 
-function openTaskDetails(taskId, _onCardRefresh) {
+function openTaskDetails(taskId, onCardRefresh) {
     closeAllDropdowns();
+    fetchTaskDetails(taskId, onCardRefresh);
+}
+
+async function fetchTaskDetails(taskId, onCardRefresh) {
+    try {
+        const task = await get(`/instances/${taskId}`);
+        if (task) {
+            showDetailsModal(task, onCardRefresh);
+        }
+    } catch {
+        // error handled by api.js
+    }
+}
+
+function showDetailsModal(task, onCardRefresh) {
+    const overlay = document.createElement('div');
+    overlay.className = 'task-details-overlay';
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal(overlay);
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'task-details-modal';
+
+    const header = document.createElement('div');
+    header.className = 'task-details-header';
+    const titleEl = document.createElement('h3');
+    titleEl.textContent = task.title;
+    header.appendChild(titleEl);
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'task-details-close';
+    closeBtn.textContent = '✕';
+    closeBtn.title = 'Закрыть';
+    closeBtn.setAttribute('aria-label', 'Закрыть');
+    closeBtn.addEventListener('click', () => closeModal(overlay));
+    header.appendChild(closeBtn);
+    modal.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'task-details-body';
+
+    const rows = [
+        ['Дата', formatDate(task.scheduled_date)],
+        ['Исполнитель', task.assignee ? task.assignee.name : '—'],
+        ['Статус', getStatusLabel(task.status)],
+        ['Стоимость', `${task.sp_cost_current ?? 0} SP`],
+        ['Выполнено', task.completed_at ? formatDate(task.completed_at.split('T')[0]) : '—'],
+        ['Выполнил', task.completed_by ? task.completed_by.name : '—'],
+    ];
+
+    if (task.transfers && task.transfers.length > 0) {
+        const transferTexts = task.transfers.map(t => {
+            const from = t.from_user ? t.from_user.name : '?';
+            const to = t.to_user ? t.to_user.name : '?';
+            return `${from} → ${to} (${formatDate(t.transferred_at.split('T')[0])})`;
+        });
+        rows.push(['Переназначения', transferTexts.join('; ')]);
+    }
+
+    for (const [label, value] of rows) {
+        const row = document.createElement('div');
+        row.className = 'task-details-row';
+        const labelEl = document.createElement('span');
+        labelEl.className = 'task-details-row-label';
+        labelEl.textContent = label;
+        const valEl = document.createElement('span');
+        valEl.className = 'task-details-row-value';
+        valEl.textContent = value;
+        row.appendChild(labelEl);
+        row.appendChild(valEl);
+        body.appendChild(row);
+    }
+    modal.appendChild(body);
+
+    const footer = document.createElement('div');
+    footer.className = 'task-details-footer';
+
+    if (task.status === 'done') {
+        const uncompleteBtn = document.createElement('button');
+        uncompleteBtn.className = 'task-details-btn uncomplete';
+        uncompleteBtn.textContent = 'Отменить выполнение';
+        uncompleteBtn.addEventListener('click', () => {
+            uncompleteTask(task.id, onCardRefresh);
+        });
+        footer.appendChild(uncompleteBtn);
+    }
+
+    modal.appendChild(footer);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+}
+
+function getStatusLabel(status) {
+    switch (status) {
+        case 'done': return 'Выполнено';
+        case 'overdue': return 'Просрочено';
+        case 'pending': return 'Ожидает';
+        default: return status;
+    }
+}
+
+function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}.${parts[0]}`;
+    }
+    return dateStr;
+}
+
+function closeModal(overlay) {
+    if (overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay);
+    }
+}
+
+async function uncompleteTask(taskId, onCardRefresh) {
+    try {
+        const updated = await post(`/instances/${taskId}/uncomplete`);
+        const overlay = document.querySelector('.task-details-overlay');
+        if (overlay) closeModal(overlay);
+        if (updated && onCardRefresh) {
+            onCardRefresh(updated);
+        }
+    } catch {
+        // error handled by api.js
+    }
 }
 
 function toggleDropdown(card, dropdown) {
@@ -225,18 +434,41 @@ function toggleDropdown(card, dropdown) {
         return;
     }
     closeAllDropdowns();
+    document.body.appendChild(dropdown);
+    positionDropdown(card, dropdown);
     dropdown.classList.add('open');
     activeDropdownEl = dropdown;
-    card._dropdown = dropdown;
+}
+
+function positionDropdown(card, dropdown) {
+    const rect = card.getBoundingClientRect();
+    dropdown.style.display = 'block';
+    const w = dropdown.offsetWidth;
+    dropdown.style.position = 'fixed';
+    dropdown.style.top = `${rect.bottom}px`;
+    dropdown.style.left = `${rect.right - w}px`;
+    dropdown.style.zIndex = '9999';
 }
 
 function closeAllDropdowns() {
     if (activeDropdownEl) {
         activeDropdownEl.classList.remove('open');
         const submenus = activeDropdownEl.querySelectorAll('.card-reassign-submenu');
-        submenus.forEach(s => s.classList.remove('open'));
+        submenus.forEach(s => clearSubmenuStyles(s));
+        if (activeDropdownEl.parentNode) {
+            activeDropdownEl.parentNode.removeChild(activeDropdownEl);
+        }
+        activeDropdownEl._resetPosition();
         activeDropdownEl = null;
     }
+}
+
+function clearSubmenuStyles(el) {
+    el.classList.remove('open');
+    el.style.position = '';
+    el.style.top = '';
+    el.style.left = '';
+    el.style.zIndex = '';
 }
 
 function setupLongPress(card, btn, handler) {
@@ -308,18 +540,26 @@ function updateCardInDOM(taskEl, updatedTask) {
         const dropdown = document.createElement('div');
         dropdown.className = 'card-dropdown';
         dropdown.setAttribute('role', 'menu');
+        dropdown._resetPosition = () => {
+            dropdown.style.position = '';
+            dropdown.style.top = '';
+            dropdown.style.left = '';
+            dropdown.style.zIndex = '';
+        };
         buildDropdownItems(dropdown, updatedTask, card._onCardRefresh);
-        card.appendChild(dropdown);
+        card._dropdown = dropdown;
 
         actionsBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             toggleDropdown(card, dropdown);
         });
+    } else {
+        buildDoneDropdownForRefresh(card, actionsBtn, updatedTask);
     }
 }
 
 document.addEventListener('click', (e) => {
-    if (activeDropdownEl && !e.target.closest('.card-dropdown') && !e.target.closest('.card-actions-btn')) {
+    if (activeDropdownEl && !e.target.closest('.card-dropdown') && !e.target.closest('.card-actions-btn') && !e.target.closest('.card-reassign-submenu')) {
         closeAllDropdowns();
     }
 });

@@ -53,9 +53,10 @@ class SqliteUserRepository(UserRepository):
         *,
         name: str | None = None,
         color: str | None = None,
+        active: bool | None = None,
     ) -> User:
         with get_transaction(self._db_path) as conn:
-            has_any = name is not None or color is not None
+            has_any = name is not None or color is not None or active is not None
             if not has_any:
                 row = conn.execute(
                     'SELECT * FROM "user" WHERE id = ?', (user_id,),
@@ -69,6 +70,10 @@ class SqliteUserRepository(UserRepository):
             if color is not None:
                 conn.execute(
                     'UPDATE "user" SET color = ? WHERE id = ?', (color, user_id),
+                )
+            if active is not None:
+                conn.execute(
+                    'UPDATE "user" SET active = ? WHERE id = ?', (1 if active else 0, user_id),
                 )
             row = conn.execute(
                 'SELECT * FROM "user" WHERE id = ?', (user_id,),
@@ -84,6 +89,27 @@ class SqliteUserRepository(UserRepository):
                 'SELECT * FROM "user" WHERE id = ?', (user_id,),
             ).fetchone()
             return self._to_user(row)
+
+    def delete(self, user_id: int) -> None:
+        with get_transaction(self._db_path) as conn:
+            conn.execute(
+                'DELETE FROM task_transfer WHERE from_user_id = ?', (user_id,),
+            )
+            conn.execute(
+                'DELETE FROM task_transfer WHERE to_user_id = ?', (user_id,),
+            )
+            conn.execute(
+                'DELETE FROM task_instance WHERE assignee_id = ?', (user_id,),
+            )
+            conn.execute(
+                'DELETE FROM task_instance WHERE completed_by_id = ? AND completed_by_id IS NOT NULL', (user_id,),
+            )
+            conn.execute(
+                'UPDATE task_template SET default_assignee_id = NULL WHERE default_assignee_id = ?', (user_id,),
+            )
+            conn.execute(
+                'DELETE FROM "user" WHERE id = ?', (user_id,),
+            )
 
     def has_active_instances(self, user_id: int) -> bool:
         with get_connection(self._db_path) as conn:

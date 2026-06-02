@@ -43,6 +43,7 @@ class TemplateRepository(ABC):
         recurrence_type: str | None = None,
         recurrence_params: dict[str, int] | None = None,
         default_assignee_id: int | None = None,
+        active: bool | None = None,
     ) -> TaskTemplate:
         """Обновляет поля существующего шаблона и возвращает актуальную запись."""
         raise NotImplementedError
@@ -50,4 +51,9 @@ class TemplateRepository(ABC):
     @abstractmethod
     def deactivate(self, template_id: int) -> TaskTemplate:
         """Выполняет мягкое удаление шаблона (active=False)."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, template_id: int) -> None:
+        """Жёстко удаляет шаблон из БД."""
         raise NotImplementedError

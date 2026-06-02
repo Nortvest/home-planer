@@ -25,11 +25,15 @@ class MaterializerUseCase:
         self._template_repo = template_repo
         self._instance_repo = instance_repo
 
-    def materialize(self, start: date, end: date) -> None:
+    def materialize(self, start: date, end: date, today: date) -> None:
         active_templates = self._template_repo.list_active()
         for tpl in active_templates:
             dates = generate_recurrence_dates(tpl, start, end)
+            valid_dates = set(d for d in dates if d >= today)
+
             for d in dates:
+                if d < today:
+                    continue
                 existing = self._instance_repo.list_by_template_and_date(tpl.id, d)
                 if not existing:
                     instance = TaskInstance(
@@ -40,6 +44,22 @@ class MaterializerUseCase:
                         assignee_id=tpl.default_assignee_id,
                     )
                     self._instance_repo.create(instance)
+
+            self._cleanup_orphaned(tpl, start, end, today, valid_dates)
+
+    def _cleanup_orphaned(
+        self, tpl, start: date, end: date, today: date, valid_dates: set,
+    ) -> None:
+        instances = self._instance_repo.list_by_date_range(start, end)
+        for inst in instances:
+            if inst.template_id != tpl.id:
+                continue
+            if inst.scheduled_date < today:
+                continue
+            if inst.is_done:
+                continue
+            if inst.scheduled_date not in valid_dates:
+                self._instance_repo.delete_by_id(inst.id)
 
 
 class GetCalendarUseCase:
@@ -64,7 +84,7 @@ class GetCalendarUseCase:
         _, last_day = monthrange(year, month)
         end = date(year, month, last_day)
 
-        self._materializer.materialize(start, end)
+        self._materializer.materialize(start, end, self._clock.today())
 
         instances = self._instance_repo.list_by_date_range(start, end)
         users = self._user_repo.list_active()

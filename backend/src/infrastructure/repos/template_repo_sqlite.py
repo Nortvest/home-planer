@@ -71,6 +71,7 @@ class SqliteTemplateRepository(TemplateRepository):
         recurrence_type: str | None = None,
         recurrence_params: dict[str, int] | None = None,
         default_assignee_id: int | None = None,
+        active: bool | None = None,
     ) -> TaskTemplate:
         with get_transaction(self._db_path) as conn:
             _update_templ_fields(
@@ -82,6 +83,7 @@ class SqliteTemplateRepository(TemplateRepository):
                 recurrence_type,
                 recurrence_params,
                 default_assignee_id,
+                active,
             )
             row = conn.execute(
                 "SELECT * FROM task_template WHERE id = ?", (template_id,),
@@ -98,6 +100,15 @@ class SqliteTemplateRepository(TemplateRepository):
                 "SELECT * FROM task_template WHERE id = ?", (template_id,),
             ).fetchone()
             return self._to_template(row)
+
+    def delete(self, template_id: int) -> None:
+        with get_transaction(self._db_path) as db_conn:
+            db_conn.execute(
+                "DELETE FROM task_instance WHERE template_id = ?", (template_id,),
+            )
+            db_conn.execute(
+                "DELETE FROM task_template WHERE id = ?", (template_id,),
+            )
 
     @staticmethod
     def _to_template(row: sqlite3.Row) -> TaskTemplate:
@@ -126,6 +137,7 @@ def _update_templ_fields(  # noqa: PLR0913, PLR0917
     recurrence_type: str | None,
     recurrence_params: dict[str, int] | None,
     default_assignee_id: int | None,
+    active: bool | None,
 ) -> None:
     for field, value in (
         ("title", title), ("description", description), ("sp_cost", sp_cost),
@@ -150,4 +162,9 @@ def _update_templ_fields(  # noqa: PLR0913, PLR0917
         conn.execute(
             "UPDATE task_template SET default_assignee_id = ? WHERE id = ?",
             (default_assignee_id, template_id),
+        )
+    if active is not None:
+        conn.execute(
+            "UPDATE task_template SET active = ? WHERE id = ?",
+            (1 if active else 0, template_id),
         )

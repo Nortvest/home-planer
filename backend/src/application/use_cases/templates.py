@@ -43,6 +43,7 @@ class TemplateManagementUseCase:
         recurrence_type: str | None = None,
         recurrence_params: dict[str, int] | None = None,
         default_assignee_id: int | None = None,
+        active: bool | None = None,
     ) -> TaskTemplateDTO:
         template = self._repo.update(
             template_id,
@@ -52,6 +53,7 @@ class TemplateManagementUseCase:
             recurrence_type=recurrence_type,
             recurrence_params=recurrence_params,
             default_assignee_id=default_assignee_id,
+            active=active,
         )
         return _to_dto(template)
 
@@ -60,6 +62,12 @@ class TemplateManagementUseCase:
         if tpl is None:
             raise TemplateNotFoundError(f"Шаблон не найден: {template_id}")
         self._repo.deactivate(template_id)
+
+    def delete(self, template_id: int) -> None:
+        tpl = self._repo.get(template_id)
+        if tpl is None:
+            raise TemplateNotFoundError(f"Шаблон не найден: {template_id}")
+        self._repo.delete(template_id)
 
 
 def _to_dto(t: TaskTemplate) -> TaskTemplateDTO:

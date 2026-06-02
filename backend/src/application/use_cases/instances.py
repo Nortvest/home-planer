@@ -12,6 +12,7 @@ from src.domain.entities import TaskInstance, TaskTransfer
 from src.domain.exceptions import (
     InstanceAlreadyCompletedError,
     InstanceNotFoundError,
+    InstanceNotCompletedError,
     UserNotFoundError,
 )
 from src.domain.services import compute_status
@@ -87,6 +88,42 @@ class CompleteInstanceUseCase:
         instance.completed_at = datetime.now(tz=timezone.utc)
         instance.completed_by_id = completed_by_id
         instance.sp_cost_at_completion = sp_cost
+        updated = self._instance_repo.update(instance)
+        return _to_instance_dto(
+            updated,
+            self._user_repo,
+            self._transfer_repo,
+            self._clock,
+            self._template_repo,
+        )
+
+
+class UncompleteInstanceUseCase:
+    def __init__(
+        self,
+        instance_repo: InstanceRepository,
+        user_repo: UserRepository,
+        transfer_repo: TransferRepository,
+        template_repo: TemplateRepository,
+        clock: Clock,
+    ) -> None:
+        self._instance_repo = instance_repo
+        self._user_repo = user_repo
+        self._transfer_repo = transfer_repo
+        self._template_repo = template_repo
+        self._clock = clock
+
+    def execute(self, instance_id: int) -> TaskInstanceDTO:
+        instance = self._instance_repo.get(instance_id)
+        if instance is None:
+            raise InstanceNotFoundError(f"Инстанс не найден: {instance_id}")
+
+        if not instance.is_done:
+            raise InstanceNotCompletedError("Инстанс не завершён")
+
+        instance.completed_at = None
+        instance.completed_by_id = None
+        instance.sp_cost_at_completion = None
         updated = self._instance_repo.update(instance)
         return _to_instance_dto(
             updated,

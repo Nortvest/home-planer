@@ -26,7 +26,7 @@ class UserRepository(ABC):
 
     @abstractmethod
     def update(
-        self, user_id: int, *, name: str | None = None, color: str | None = None,
+        self, user_id: int, *, name: str | None = None, color: str | None = None, active: bool | None = None,
     ) -> User:
         """Обновляет поля существующего пользователя и возвращает актуальную запись."""
         raise NotImplementedError
@@ -34,6 +34,11 @@ class UserRepository(ABC):
     @abstractmethod
     def deactivate(self, user_id: int) -> User:
         """Выполняет мягкое удаление (active=False) и возвращает обновлённую запись."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, user_id: int) -> None:
+        """Жёстко удаляет пользователя из БД."""
         raise NotImplementedError
 
     @abstractmethod

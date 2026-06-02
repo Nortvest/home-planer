@@ -14,6 +14,7 @@ from src.application.use_cases import (
     MaterializerUseCase,
     ReassignInstanceUseCase,
     TemplateManagementUseCase,
+    UncompleteInstanceUseCase,
     UserManagementUseCase,
 )
 from src.infrastructure.repos.clock_adapter import SystemClock
@@ -71,6 +72,17 @@ def get_reassign_use_case() -> ReassignInstanceUseCase:
 def get_complete_use_case() -> CompleteInstanceUseCase:
     user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
     return CompleteInstanceUseCase(
+        instance_repo,
+        user_repo,
+        transfer_repo,
+        template_repo,
+        clock,
+    )
+
+
+def get_uncomplete_use_case() -> UncompleteInstanceUseCase:
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    return UncompleteInstanceUseCase(
         instance_repo,
         user_repo,
         transfer_repo,

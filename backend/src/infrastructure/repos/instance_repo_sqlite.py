@@ -153,6 +153,12 @@ class SqliteInstanceRepository(InstanceRepository):
             ).fetchone()
             return row["cnt"]  # type: ignore[no-any-return]
 
+    def delete_by_id(self, instance_id: int) -> None:
+        with get_transaction(self._db_path) as conn:
+            conn.execute(
+                "DELETE FROM task_instance WHERE id = ?", (instance_id,),
+            )
+
     @staticmethod
     def _to_instance(row: sqlite3.Row) -> TaskInstance:
         return TaskInstance(

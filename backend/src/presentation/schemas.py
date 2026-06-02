@@ -40,6 +40,7 @@ class UserCreateIn(BaseModel):
 class UserUpdateIn(BaseModel):
     name: str | None = Field(default=None, min_length=1)
     color: str | None = None
+    active: bool | None = None
 
     @model_validator(mode="after")
     def _validate_color(self) -> "UserUpdateIn":
@@ -91,6 +92,7 @@ class TaskTemplateUpdateIn(BaseModel):
     )
     recurrence_params: RecurrenceParamsIn | None = None
     default_assignee_id: int | None = None
+    active: bool | None = None
 
     def to_params_dict(self) -> dict[str, int]:
         if self.recurrence_params is None:

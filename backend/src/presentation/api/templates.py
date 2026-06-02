@@ -94,6 +94,7 @@ def update(
                 body.to_params_dict() if body.recurrence_params is not None else None
             ),
             default_assignee_id=body.default_assignee_id,
+            active=body.active,
         )
     except DomainError as exc:
         _handle_domain_error(exc)
@@ -106,6 +107,6 @@ def delete(
     uc: TemplateManagementUseCase = Depends(get_template_use_case),  # noqa: B008
 ) -> None:
     try:
-        uc.deactivate(template_id)
+        uc.delete(template_id)
     except DomainError as exc:
         _handle_domain_error(exc)

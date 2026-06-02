@@ -58,3 +58,8 @@ class InstanceRepository(ABC):
     def count_done_current_month(self, today: date) -> int:
         """Возвращает количество завершённых инстансов за текущий календарный месяц."""
         raise NotImplementedError
+
+    @abstractmethod
+    def delete_by_id(self, instance_id: int) -> None:
+        """Удаляет инстанс по ID."""
+        raise NotImplementedError

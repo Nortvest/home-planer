@@ -2,19 +2,22 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.application.dtos import TaskInstanceDTO, TaskTransferDTO
-from src.application.use_cases import CompleteInstanceUseCase, ReassignInstanceUseCase
-from src.application.use_cases.instances import _get_transfers_dto
+from src.application.use_cases import CompleteInstanceUseCase, ReassignInstanceUseCase, UncompleteInstanceUseCase
+from src.application.use_cases.instances import _get_transfers_dto, _to_instance_dto
+from src.infrastructure.repos.clock_adapter import SystemClock
 from src.domain.exceptions import (
     DomainError,
     InstanceAlreadyCompletedError,
     InstanceNotFoundError,
+    InstanceNotCompletedError,
     UserNotFoundError,
 )
 from src.infrastructure.repos.instance_repo_sqlite import SqliteInstanceRepository
+from src.infrastructure.repos.template_repo_sqlite import SqliteTemplateRepository
 from src.infrastructure.repos.transfer_repo_sqlite import SqliteTransferRepository
 from src.infrastructure.repos.user_repo_sqlite import SqliteUserRepository
 from src.infrastructure.settings import get_settings
-from src.presentation.deps import get_complete_use_case, get_reassign_use_case
+from src.presentation.deps import get_complete_use_case, get_reassign_use_case, get_uncomplete_use_case
 from src.presentation.schemas import (
     CompleteIn,
     ReassignIn,
@@ -31,6 +34,7 @@ EXCEPTION_MAP: dict[type[DomainError], tuple[int, str]] = {
     InstanceNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
     UserNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
     InstanceAlreadyCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
+    InstanceNotCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
 }
 
 
@@ -87,6 +91,28 @@ def _transfer_dto_to_out(t: TaskTransferDTO) -> TaskTransferOut:
     )
 
 
+@router.get("/instances/{instance_id:int}", response_model=TaskInstanceOut)
+def get_instance(instance_id: int) -> TaskInstanceOut:
+    db_path = get_settings().db_path_resolved
+    user_repo = SqliteUserRepository(db_path)
+    transfer_repo = SqliteTransferRepository(db_path)
+    instance_repo = SqliteInstanceRepository(db_path)
+    template_repo_instance = SqliteTemplateRepository(db_path)
+    clock = SystemClock()
+
+    instance = instance_repo.get(instance_id)
+    if instance is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "not_found", "message": f"Инстанс не найден: {instance_id}"},
+        )
+
+    inst_dto = _to_instance_dto(
+        instance, user_repo, transfer_repo, clock, template_repo_instance,
+    )
+    return _instance_dto_to_out(inst_dto)
+
+
 @router.post("/{instance_id:int}/reassign", response_model=TaskInstanceOut)
 def reassign(
     instance_id: int,
@@ -108,6 +134,18 @@ def complete(
 ) -> TaskInstanceOut:
     try:
         inst = uc.execute(instance_id, body.completed_by_id)
+    except DomainError as exc:
+        _handle_domain_error(exc)
+    return _instance_dto_to_out(inst)
+
+
+@router.post("/{instance_id:int}/uncomplete", response_model=TaskInstanceOut)
+def uncomplete(
+    instance_id: int,
+    uc: UncompleteInstanceUseCase = Depends(get_uncomplete_use_case),  # noqa: B008
+) -> TaskInstanceOut:
+    try:
+        inst = uc.execute(instance_id)
     except DomainError as exc:
         _handle_domain_error(exc)
     return _instance_dto_to_out(inst)

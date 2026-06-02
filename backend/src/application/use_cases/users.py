@@ -27,7 +27,7 @@ class UserManagementUseCase:
         return _to_dto(user)
 
     def update(
-        self, user_id: int, *, name: str | None = None, color: str | None = None,
+        self, user_id: int, *, name: str | None = None, color: str | None = None, active: bool | None = None,
     ) -> UserDTO:
         existing = self._repo.get(user_id)
         if existing is None:
@@ -39,7 +39,7 @@ class UserManagementUseCase:
                 if u.active and u.id != user_id and u.name.lower() == name.strip().lower():
                     raise DuplicateUserNameError(f"Имя пользователя уже занято: {name}")
 
-        user = self._repo.update(user_id, name=name, color=color)
+        user = self._repo.update(user_id, name=name, color=color, active=active)
         return _to_dto(user)
 
     def deactivate(self, user_id: int) -> UserDTO:
@@ -48,10 +48,16 @@ class UserManagementUseCase:
             raise UserNotFoundError(f"Пользователь не найден: {user_id}")
         if self._repo.has_active_instances(user_id):
             raise UserHasActiveTasksError(
-                "Нельзя удалить пользователя: у него есть незакрытые задачи",
+                "Нельзя деактивировать пользователя: у него есть незакрытые задачи",
             )
         user = self._repo.deactivate(user_id)
         return _to_dto(user)
+
+    def delete(self, user_id: int) -> None:
+        existing = self._repo.get(user_id)
+        if existing is None:
+            raise UserNotFoundError(f"Пользователь не найден: {user_id}")
+        self._repo.delete(user_id)
 
 
 def _to_dto(u: User) -> UserDTO:

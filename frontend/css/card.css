@@ -41,10 +41,7 @@
 }
 
 .card-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    z-index: 50;
+    position: fixed;
     min-width: 160px;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -99,9 +96,7 @@
 }
 
 .card-reassign-submenu {
-    position: absolute;
-    right: 100%;
-    top: 0;
+    position: fixed;
     min-width: 140px;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
@@ -143,7 +138,7 @@
 }
 
 .calendar-task-card.done .card-actions-btn {
-    display: none;
+    display: flex;
 }
 
 .calendar-task-card.overdue .calendar-task-color-bar {
@@ -169,4 +164,132 @@
     .card-reassign-submenu {
         min-width: 130px;
     }
+}
+
+.task-details-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20000;
+}
+
+.task-details-modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    width: 90%;
+    max-width: 440px;
+    max-height: 80vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.task-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.task-details-header h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    margin-right: 0.5rem;
+}
+
+.task-details-close {
+    width: 1.5rem;
+    height: 1.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.task-details-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.task-details-body {
+    padding: 0.75rem 1.25rem;
+}
+
+.task-details-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+}
+
+.task-details-row:last-child {
+    border-bottom: none;
+}
+
+.task-details-row-label {
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.task-details-row-value {
+    color: var(--text-primary);
+    text-align: right;
+    word-break: break-word;
+}
+
+.task-details-footer {
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.task-details-btn {
+    padding: 0.45rem 1rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: background-color 0.15s ease;
+}
+
+.task-details-btn:hover {
+    background-color: var(--border-color);
+}
+
+.task-details-btn.uncomplete {
+    color: var(--danger);
+    border-color: var(--danger-bg);
+}
+
+.task-details-btn.uncomplete:hover {
+    background-color: var(--danger-bg);
 }

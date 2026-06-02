@@ -148,12 +148,14 @@ function renderChart(items) {
     }
 
     const maxSp = Math.max(...items.map(i => i.sp_sum ?? 0), 1);
-    const barWidth = Math.max(32, Math.min(80, 500 / items.length - 16));
-    const chartH = 200;
-    const padBottom = 40;
-    const padLeft = 10;
-    const padTop = 10;
-    const totalW = items.length * (barWidth + 16) + padLeft + 10;
+    const containerWidth = document.getElementById('app')?.clientWidth ?? 800;
+    const availableW = Math.min(containerWidth - 80, 700);
+    const barWidth = Math.max(24, Math.min(48, availableW / items.length - 12));
+    const chartH = 80;
+    const padBottom = 28;
+    const padLeft = 30;
+    const padTop = 22;
+    const totalW = items.length * (barWidth + 12) + padLeft + 10;
     const svgH = chartH + padBottom + padTop;
 
     const axisY = padTop;
@@ -162,8 +164,8 @@ function renderChart(items) {
     let svg = `<div class="chart-container"><svg viewBox="0 0 ${totalW} ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
 
     svg += `<line class="chart-axis" x1="${padLeft}" y1="${axisBottom}" x2="${totalW - 10}" y2="${axisBottom}" stroke-width="1"/>`;
-    svg += `<text class="chart-max-label" x="${padLeft}" y="${axisY + 4}" font-size="11" text-anchor="middle">${maxSp}</text>`;
-    svg += `<text class="chart-max-label" x="${padLeft}" y="${axisBottom + 20}" font-size="11" text-anchor="middle">0</text>`;
+    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisY + 3}" font-size="8" text-anchor="end">${maxSp} SP</text>`;
+    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisBottom + 2}" font-size="8" text-anchor="end">0 SP</text>`;
 
     items.forEach((item, i) => {
         const user = item.user || {};
@@ -171,12 +173,12 @@ function renderChart(items) {
         const color = user.color || '#888';
         const sp = item.sp_sum ?? 0;
         const barH = maxSp > 0 ? (sp / maxSp) * chartH : 0;
-        const x = padLeft + i * (barWidth + 16) + 8;
+        const x = padLeft + 10 + i * (barWidth + 12);
         const y = axisBottom - barH;
 
-        svg += `<rect x="${x}" y="${y}" width="${barWidth}" height="${Math.max(barH, 0)}" fill="${color}" rx="4"/>`;
-        svg += `<text class="chart-val" x="${x + barWidth / 2}" y="${y - 4}" font-size="12" text-anchor="middle">${sp}</text>`;
-        svg += `<text class="chart-label" x="${x + barWidth / 2}" y="${axisBottom + 20}" font-size="11" text-anchor="middle">${escHtml(name)}</text>`;
+        svg += `<rect x="${x}" y="${y}" width="${barWidth}" height="${Math.max(barH, 0)}" fill="${color}" rx="3"/>`;
+        svg += `<text class="chart-val" x="${x + barWidth / 2}" y="${y - 3}" font-size="8" text-anchor="middle">${sp}</text>`;
+        svg += `<text class="chart-label" x="${x + barWidth / 2}" y="${axisBottom + 16}" font-size="9" text-anchor="middle">${escHtml(name)}</text>`;
     });
 
     svg += `</svg></div>`;

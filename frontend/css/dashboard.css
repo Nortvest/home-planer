@@ -8,9 +8,17 @@
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 1.25rem;
+    padding: 1rem;
     box-shadow: var(--shadow-sm);
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-card:not(.full-width) {
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .dash-card.full-width {
@@ -18,10 +26,10 @@
 }
 
 .dash-card h2 {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 1rem;
+    margin-bottom: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
 }
@@ -41,14 +49,14 @@
 
 .stat-item {
     text-align: center;
-    padding: 1rem 0.5rem;
+    padding: 0.75rem 0.5rem;
     border-radius: var(--radius-sm);
     background-color: var(--bg-hover);
     transition: background-color 0.2s ease;
 }
 
 .stat-value {
-    font-size: 2rem;
+    font-size: 1.6rem;
     font-weight: 700;
     line-height: 1.2;
 }
@@ -71,11 +79,17 @@
     margin-top: 0.25rem;
 }
 
+.balance-rows-wrap {
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
 .balance-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.6rem 0;
+    gap: 0.6rem;
+    padding: 0.45rem 0;
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -84,9 +98,9 @@
 }
 
 .balance-color {
-    width: 0.5rem;
-    height: 2.5rem;
-    border-radius: 3px;
+    width: 0.4rem;
+    height: 2rem;
+    border-radius: 2px;
     flex-shrink: 0;
 }
 
@@ -97,18 +111,18 @@
 
 .balance-name {
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     color: var(--text-primary);
 }
 
 .balance-detail {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
 .balance-sp {
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
 }
@@ -147,6 +161,9 @@
 
 .task-list {
     list-style: none;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .task-list-item {

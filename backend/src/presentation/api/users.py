@@ -77,7 +77,7 @@ def update(
     uc: UserManagementUseCase = Depends(get_user_use_case),  # noqa: B008
 ) -> UserOut:
     try:
-        user = uc.update(user_id, name=body.name, color=body.color)
+        user = uc.update(user_id, name=body.name, color=body.color, active=body.active)
     except DomainError as exc:
         _handle_domain_error(exc)
     return UserOut.model_validate(user.__dict__)
@@ -89,6 +89,6 @@ def delete(
     uc: UserManagementUseCase = Depends(get_user_use_case),  # noqa: B008
 ) -> None:
     try:
-        uc.deactivate(user_id)
+        uc.delete(user_id)
     except DomainError as exc:
         _handle_domain_error(exc)

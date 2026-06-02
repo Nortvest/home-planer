@@ -19,13 +19,15 @@ const RECURRENCE_OPTIONS = [
 ];
 
 const WEEKDAYS = [
-    'Воскресенье', 'Понедельник', 'Вторник', 'Среда',
-    'Четверг', 'Пятница', 'Суббота'
+    'Понедельник', 'Вторник', 'Среда', 'Четверг',
+    'Пятница', 'Суббота', 'Воскресенье'
 ];
 
 let allUsers = [];
 let allTemplates = [];
 let currentTab = 'users';
+let modalEscHandler = null;
+let modalOverlayHandler = null;
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', async () => {
@@ -278,6 +280,11 @@ function openUserForm(userId) {
 
         if (!nameVal) {
             modal.querySelector('#uf-error').textContent = 'Введите имя';
+            return;
+        }
+        const dupUser = allUsers.find(u => u.name.toLowerCase() === nameVal.toLowerCase() && u.id !== Number(userId));
+        if (dupUser) {
+            modal.querySelector('#uf-error').textContent = `Пользователь «${escHtml(dupUser.name)}» уже существует`;
             return;
         }
         if (!/^#[0-9a-fA-F]{6}$/.test(colorVal)) {
@@ -575,6 +582,13 @@ function openTemplateForm(templateId) {
             return;
         }
 
+        const dupTemplate = allTemplates.find(t => t.title.toLowerCase() === titleVal.toLowerCase() && t.id !== Number(templateId));
+        if (dupTemplate) {
+            errorEl.textContent = `Шаблон «${escHtml(dupTemplate.title)}» уже существует`;
+            submitted = false;
+            return;
+        }
+
         if (isNaN(spVal) || spVal < 0) {
             errorEl.textContent = 'SP должно быть числом ≥ 0';
             submitted = false;
@@ -641,7 +655,7 @@ async function confirmDeactivateTemplate(templateId) {
         if (submitted) return;
         submitted = true;
         try {
-            await del(`/templates/${templateId}`);
+            await patch(`/templates/${templateId}`, { active: false });
             closeModal();
             await loadTemplates();
         } catch (e) {
@@ -690,15 +704,15 @@ function createModal(title) {
     modal.innerHTML = `<div class="modal-title">${escHtml(title)}</div>`;
     overlay.appendChild(modal);
 
-    overlay.addEventListener('click', (e) => {
+    modalOverlayHandler = (e) => {
         if (e.target === overlay) closeModal();
-    });
+    };
+    overlay.addEventListener('click', modalOverlayHandler);
 
-    const handler = (e) => {
+    modalEscHandler = (e) => {
         if (e.key === 'Escape') closeModal();
     };
-    modal.dataset._escHandler = handler;
-    document.addEventListener('keydown', handler);
+    document.addEventListener('keydown', modalEscHandler);
 
     return modal;
 }
@@ -727,11 +741,16 @@ function createModalConfirm(message) {
 }
 
 function closeModal() {
-    const overlay = document.getElementById('modal-overlay');
-    const modal = overlay.querySelector('.modal');
-    if (modal && modal.dataset._escHandler) {
-        document.removeEventListener('keydown', modal.dataset._escHandler);
+    if (modalEscHandler) {
+        document.removeEventListener('keydown', modalEscHandler);
+        modalEscHandler = null;
     }
+    if (modalOverlayHandler) {
+        const overlay = document.getElementById('modal-overlay');
+        overlay.removeEventListener('click', modalOverlayHandler);
+        modalOverlayHandler = null;
+    }
+    const overlay = document.getElementById('modal-overlay');
     overlay.classList.add('hidden');
     overlay.innerHTML = '';
 }
