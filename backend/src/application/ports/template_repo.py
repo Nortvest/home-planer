@@ -20,7 +20,7 @@ class TemplateRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def create(
+    def create(  # noqa: PLR0913, PLR0917
         self,
         title: str,
         description: str | None,
@@ -33,7 +33,7 @@ class TemplateRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def update(
+    def update(  # noqa: PLR0913
         self,
         template_id: int,
         *,

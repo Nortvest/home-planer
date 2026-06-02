@@ -66,8 +66,8 @@ class GetDashboardUseCase:
             summary=summary,
         )
 
+    @staticmethod
     def _compute_30d(
-        self,
         instances: list[TaskInstance],
         users: list[User],
         today: date,
@@ -84,8 +84,8 @@ class GetDashboardUseCase:
             )
         return result
 
+    @staticmethod
     def _compute_monthly(
-        self,
         instances: list[TaskInstance],
         users: list[User],
         year: int,

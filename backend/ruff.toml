@@ -42,12 +42,6 @@ ignore = [
 ]
 
 [lint.per-file-ignores]
-"src/application/**" = [
-    "PLR0913",  # Many args are natural for use-case constructors
-    "PLR0917",  # Many positional args
-    "PLR0915",  # Statement count
-    "PLR6301",  # Method vs function heuristic
-]
 "tests/*" = [
     "INP001",
     "S101",

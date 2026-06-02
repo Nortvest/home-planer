@@ -43,7 +43,7 @@ class MaterializerUseCase:
 
 
 class GetCalendarUseCase:
-    def __init__(
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         materializer: MaterializerUseCase,
         instance_repo: InstanceRepository,

@@ -71,16 +71,12 @@ class CompleteInstanceUseCase:
         self._clock = clock
 
     def execute(self, instance_id: int, completed_by_id: int) -> TaskInstanceDTO:
-        instance = self._instance_repo.get(instance_id)
-        if instance is None:
-            raise InstanceNotFoundError(f"Инстанс не найден: {instance_id}")
-
-        if instance.is_done:
-            raise InstanceAlreadyCompletedError("Инстанс уже закрыт")
-
-        completed_user = self._user_repo.get(completed_by_id)
-        if completed_user is None:
-            raise UserNotFoundError(f"Пользователь не найден: {completed_by_id}")
+        instance = _validate_complete_request(
+            instance_id,
+            completed_by_id,
+            self._instance_repo,
+            self._user_repo,
+        )
 
         sp_cost = instance.sp_cost_at_completion
         if instance.template_id is not None:
@@ -99,6 +95,26 @@ class CompleteInstanceUseCase:
             self._clock,
             self._template_repo,
         )
+
+
+def _validate_complete_request(
+    instance_id: int,
+    completed_by_id: int,
+    instance_repo: InstanceRepository,
+    user_repo: UserRepository,
+) -> TaskInstance:
+    instance = instance_repo.get(instance_id)
+    if instance is None:
+        raise InstanceNotFoundError(f"Инстанс не найден: {instance_id}")
+
+    if instance.is_done:
+        raise InstanceAlreadyCompletedError("Инстанс уже закрыт")
+
+    completed_user = user_repo.get(completed_by_id)
+    if completed_user is None:
+        raise UserNotFoundError(f"Пользователь не найден: {completed_by_id}")
+
+    return instance
 
 
 def _to_instance_dto(

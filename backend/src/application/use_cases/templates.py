@@ -14,7 +14,7 @@ class TemplateManagementUseCase:
     def get_active(self) -> list[TaskTemplateDTO]:
         return [_to_dto(t) for t in self._repo.list_active()]
 
-    def create(
+    def create(  # noqa: PLR0913, PLR0917
         self,
         title: str,
         description: str | None,
@@ -33,7 +33,7 @@ class TemplateManagementUseCase:
         )
         return _to_dto(template)
 
-    def update(
+    def update(  # noqa: PLR0913
         self,
         template_id: int,
         *,
