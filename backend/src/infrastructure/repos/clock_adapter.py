@@ -20,5 +20,5 @@ class FixedClock(Clock):
     def __init__(self, fixed_date: date) -> None:
         self._fixed_date = fixed_date
 
-    def today(self) -> date:  # type: ignore[override]
+    def today(self) -> date:
         return self._fixed_date
