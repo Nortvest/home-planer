@@ -2,6 +2,9 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
 # Install uv
 RUN pip install --no-cache-dir uv
 
