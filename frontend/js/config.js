@@ -1,4 +1,4 @@
-let API_BASE = 'http://localhost:8000/api';
+let API_BASE = 'API_BASE_PLACEHOLDER';
 
 if (window.__CONFIG__?.apiBase) {
     API_BASE = window.__CONFIG__.apiBase;

@@ -21,6 +21,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        BACKEND_URL: "${BACKEND_URL:-http://localhost:8000/api}"
     container_name: planner-frontend
     restart: unless-stopped
     ports:
