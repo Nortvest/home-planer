@@ -1,25 +1,20 @@
 import { API_BASE } from './config.js';
 import { showToast } from './ui/toast.js';
 
-let currentAbortController = null;
 const REQUEST_TIMEOUT = 15000;
 
 async function request(path, options = {}) {
     const url = `${API_BASE}${path}`;
 
-    if (currentAbortController) {
-        currentAbortController.abort();
-    }
-
-    currentAbortController = new AbortController();
+    const controller = new AbortController();
 
     const timer = setTimeout(() => {
-        currentAbortController.abort();
+        controller.abort();
     }, REQUEST_TIMEOUT);
 
     const opts = {
         headers: { 'Content-Type': 'application/json' },
-        signal: currentAbortController.signal,
+        signal: controller.signal,
         ...options,
     };
 
