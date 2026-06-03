@@ -3,6 +3,7 @@
 Каждая схема соответствует DTO из API-контракта.
 Используются для валидации запросов и сериализации ответов.
 """
+
 import re
 from datetime import (
     date,
@@ -88,7 +89,8 @@ class TaskTemplateUpdateIn(BaseModel):
     description: str | None = None
     sp_cost: int | None = Field(default=None, ge=0)
     recurrence_type: str | None = Field(
-        default=None, pattern=r"^(none|daily|weekly|every_n_days)$",
+        default=None,
+        pattern=r"^(none|daily|weekly|every_n_days)$",
     )
     recurrence_params: RecurrenceParamsIn | None = None
     default_assignee_id: int | None = None
@@ -140,6 +142,11 @@ class CompleteIn(BaseModel):
 
 class TransfersOut(BaseModel):
     transfers: list[TaskTransferOut]
+
+
+class CalendarRangeOut(BaseModel):
+    days: dict[str, list[TaskInstanceOut]]
+    users: list[UserOut]
 
 
 class CalendarOut(BaseModel):

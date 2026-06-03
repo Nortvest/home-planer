@@ -10,6 +10,7 @@ from src.application.ports import (
 from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
+    GetCalendarRangeUseCase,
     GetCalendarUseCase,
     GetDashboardUseCase,
     MaterializerUseCase,
@@ -57,6 +58,19 @@ def get_calendar_use_case() -> GetCalendarUseCase:
     user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
     materializer = MaterializerUseCase(template_repo, instance_repo)
     return GetCalendarUseCase(
+        materializer,
+        instance_repo,
+        user_repo,
+        transfer_repo,
+        template_repo,
+        clock,
+    )
+
+
+def get_calendar_range_use_case() -> GetCalendarRangeUseCase:
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    materializer = MaterializerUseCase(template_repo, instance_repo)
+    return GetCalendarRangeUseCase(
         materializer,
         instance_repo,
         user_repo,

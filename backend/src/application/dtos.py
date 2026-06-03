@@ -65,6 +65,12 @@ class CalendarDTO:
 
 
 @dataclass
+class CalendarRangeDTO:
+    days: dict[str, list[TaskInstanceDTO]]
+    users: list[UserDTO]
+
+
+@dataclass
 class BalanceEntryDTO:
     user: UserDTO
     sp_sum: int

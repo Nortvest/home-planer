@@ -1,7 +1,9 @@
+"""Use-кейсы календаря: материализация и загрузка по диапазону."""
+
 from calendar import monthrange
 from datetime import date
 
-from src.application.dtos import CalendarDTO, TaskInstanceDTO, UserDTO
+from src.application.dtos import CalendarDTO, CalendarRangeDTO, TaskInstanceDTO, UserDTO
 from src.application.ports import (
     Clock,
     InstanceRepository,
@@ -48,8 +50,12 @@ class MaterializerUseCase:
             self._cleanup_orphaned(tpl, start, end, today, valid_dates)
 
     def _cleanup_orphaned(  # noqa: PLR0912
-        self, tpl: TaskTemplate, start: date, end: date,
-        today: date, valid_dates: set[date],
+        self,
+        tpl: TaskTemplate,
+        start: date,
+        end: date,
+        today: date,
+        valid_dates: set[date],
     ) -> None:
         instances = self._instance_repo.list_by_date_range(start, end)
         for inst in instances:
@@ -65,7 +71,9 @@ class MaterializerUseCase:
                 self._instance_repo.delete_by_id(inst.id)
 
 
-class GetCalendarUseCase:
+class GetCalendarRangeUseCase:
+    """Загрузка задач по произвольному диапазону дат."""
+
     def __init__(  # noqa: PLR0913, PLR0917
         self,
         materializer: MaterializerUseCase,
@@ -82,11 +90,7 @@ class GetCalendarUseCase:
         self._template_repo = template_repo
         self._clock = clock
 
-    def execute(self, year: int, month: int) -> CalendarDTO:
-        start = date(year, month, 1)
-        _, last_day = monthrange(year, month)
-        end = date(year, month, last_day)
-
+    def execute(self, start: date, end: date) -> CalendarRangeDTO:
         self._materializer.materialize(start, end, self._clock.today())
 
         instances = self._instance_repo.list_by_date_range(start, end)
@@ -115,9 +119,43 @@ class GetCalendarUseCase:
             for u in users
         ]
 
+        return CalendarRangeDTO(
+            days=days,
+            users=user_dtos,
+        )
+
+
+class GetCalendarUseCase:
+    """Загрузка задач по году/месяцу (делегат в GetCalendarRangeUseCase)."""
+
+    def __init__(  # noqa: PLR0913, PLR0917
+        self,
+        materializer: MaterializerUseCase,
+        instance_repo: InstanceRepository,
+        user_repo: UserRepository,
+        transfer_repo: TransferRepository,
+        template_repo: TemplateRepository,
+        clock: Clock,
+    ) -> None:
+        self._range_uc = GetCalendarRangeUseCase(
+            materializer,
+            instance_repo,
+            user_repo,
+            transfer_repo,
+            template_repo,
+            clock,
+        )
+
+    def execute(self, year: int, month: int) -> CalendarDTO:
+        start = date(year, month, 1)
+        _, last_day = monthrange(year, month)
+        end = date(year, month, last_day)
+
+        result = self._range_uc.execute(start, end)
+
         return CalendarDTO(
             year=year,
             month=month,
-            days=days,
-            users=user_dtos,
+            days=result.days,
+            users=result.users,
         )
