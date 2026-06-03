@@ -6,6 +6,7 @@ from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
     ReassignInstanceUseCase,
+    RestoreInstanceUseCase,
     UncompleteInstanceUseCase,
 )
 from src.application.use_cases.instances import _get_transfers_dto, _to_instance_dto
@@ -27,6 +28,7 @@ from src.presentation.deps import (
     get_cancel_use_case,
     get_complete_use_case,
     get_reassign_use_case,
+    get_restore_use_case,
     get_uncomplete_use_case,
 )
 from src.presentation.schemas import (
@@ -167,6 +169,18 @@ def uncomplete(
 def cancel(
     instance_id: int,
     uc: CancelInstanceUseCase = Depends(get_cancel_use_case),  # noqa: B008
+) -> TaskInstanceOut:
+    try:
+        inst = uc.execute(instance_id)
+    except DomainError as exc:
+        _handle_domain_error(exc)
+    return _instance_dto_to_out(inst)
+
+
+@router.post("/{instance_id:int}/restore", response_model=TaskInstanceOut)
+def restore(
+    instance_id: int,
+    uc: RestoreInstanceUseCase = Depends(get_restore_use_case),  # noqa: B008
 ) -> TaskInstanceOut:
     try:
         inst = uc.execute(instance_id)

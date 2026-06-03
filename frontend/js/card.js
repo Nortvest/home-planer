@@ -130,6 +130,17 @@ function buildDoneDropdownForRefresh(card, actionsBtn, task) {
 }
 
 function buildCancelledDropdownItems(dropdown, task, onCardRefresh) {
+    const restoreItem = document.createElement('button');
+    restoreItem.className = 'card-dropdown-item';
+    restoreItem.textContent = 'Вернуть задачу';
+    restoreItem.setAttribute('role', 'menuitem');
+    restoreItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        restoreTask(task.id, onCardRefresh);
+        closeAllDropdowns();
+    });
+    dropdown.appendChild(restoreItem);
+
     const detailItem = document.createElement('button');
     detailItem.className = 'card-dropdown-item';
     detailItem.textContent = 'Открыть детали';
@@ -328,6 +339,18 @@ async function reassignTask(taskId, toUserId, onCardRefresh) {
 async function cancelTask(taskId, onCardRefresh) {
     try {
         const updated = await post(`/instances/${taskId}/cancel`);
+        closeAllDropdowns();
+        if (updated && onCardRefresh) {
+            onCardRefresh(updated);
+        }
+    } catch {
+        // error toast handled by api.js
+    }
+}
+
+async function restoreTask(taskId, onCardRefresh) {
+    try {
+        const updated = await post(`/instances/${taskId}/restore`);
         closeAllDropdowns();
         if (updated && onCardRefresh) {
             onCardRefresh(updated);

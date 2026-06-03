@@ -14,6 +14,7 @@ from src.application.use_cases import (
     GetDashboardUseCase,
     MaterializerUseCase,
     ReassignInstanceUseCase,
+    RestoreInstanceUseCase,
     TemplateManagementUseCase,
     UncompleteInstanceUseCase,
     UserManagementUseCase,
@@ -95,6 +96,17 @@ def get_uncomplete_use_case() -> UncompleteInstanceUseCase:
 def get_cancel_use_case() -> CancelInstanceUseCase:
     user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
     return CancelInstanceUseCase(
+        instance_repo,
+        user_repo,
+        transfer_repo,
+        template_repo,
+        clock,
+    )
+
+
+def get_restore_use_case() -> RestoreInstanceUseCase:
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    return RestoreInstanceUseCase(
         instance_repo,
         user_repo,
         transfer_repo,

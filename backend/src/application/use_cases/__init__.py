@@ -4,6 +4,7 @@ from src.application.use_cases.instances import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
     ReassignInstanceUseCase,
+    RestoreInstanceUseCase,
     UncompleteInstanceUseCase,
 )
 from src.application.use_cases.templates import TemplateManagementUseCase
@@ -16,6 +17,7 @@ __all__ = [
     "GetDashboardUseCase",
     "MaterializerUseCase",
     "ReassignInstanceUseCase",
+    "RestoreInstanceUseCase",
     "TemplateManagementUseCase",
     "UncompleteInstanceUseCase",
     "UserManagementUseCase",
