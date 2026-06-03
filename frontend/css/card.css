@@ -1,5 +1,9 @@
 .calendar-task-card {
     position: relative;
+    border-radius: var(--radius-sm);
+    padding: 2px;
+    margin: 2px 0;
+    transition: background-color 0.15s ease;
 }
 
 .card-actions-btn {
@@ -89,6 +93,18 @@
     color: var(--danger);
 }
 
+.card-dropdown-item.danger:hover {
+    background-color: var(--danger-bg);
+}
+
+.card-dropdown-item.success {
+    color: var(--success);
+}
+
+.card-dropdown-item.success:hover {
+    background-color: var(--success-bg);
+}
+
 .card-dropdown-separator {
     height: 1px;
     background-color: var(--border-color);
@@ -130,11 +146,22 @@
 }
 
 .calendar-task-card.done {
-    opacity: 0.45;
+    opacity: 0.85;
+    background: var(--success-bg);
 }
 
-.calendar-task-card.done .calendar-task-card-inner .calendar-task-title {
-    text-decoration: line-through;
+.calendar-task-card.done .calendar-task-color-bar {
+    background-color: var(--success) !important;
+}
+
+.calendar-task-card.done .card-status-icon {
+    color: var(--success);
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+.calendar-task-card.done .calendar-task-sp {
+    opacity: 0.6;
 }
 
 .calendar-task-card.done .card-actions-btn {
@@ -142,11 +169,11 @@
 }
 
 .calendar-task-card.cancelled {
-    opacity: 0.35;
+    opacity: 0.45;
+    background: color-mix(in srgb, var(--text-muted) 6%, transparent);
 }
 
 .calendar-task-card.cancelled .calendar-task-card-inner .calendar-task-title {
-    text-decoration: line-through;
     color: var(--text-muted);
 }
 
@@ -156,11 +183,15 @@
 
 .calendar-task-card.cancelled .card-status-icon {
     color: var(--text-muted);
+    font-weight: bold;
 }
 
 .calendar-task-card.cancelled .calendar-task-sp {
-    color: var(--text-muted);
-    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+.calendar-task-card.overdue {
+    background: var(--danger-bg);
 }
 
 .calendar-task-card.overdue .calendar-task-color-bar {
@@ -169,6 +200,8 @@
 
 .calendar-task-card.overdue .card-status-icon {
     color: var(--danger);
+    font-weight: bold;
+    font-size: 0.75rem;
 }
 
 @media (max-width: 600px) {
@@ -314,4 +347,32 @@
 
 .task-details-btn.uncomplete:hover {
     background-color: var(--danger-bg);
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.status-badge.status-done {
+    color: var(--success);
+    background: var(--success-bg);
+}
+
+.status-badge.status-cancelled {
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+}
+
+.status-badge.status-overdue {
+    color: var(--danger);
+    background: var(--danger-bg);
+}
+
+.status-badge.status-pending {
+    color: var(--text-secondary);
+    background: var(--bg-hover);
 }

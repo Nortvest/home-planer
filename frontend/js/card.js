@@ -179,7 +179,7 @@ function buildDropdownItems(dropdown, task, onCardRefresh) {
     const users = getUsers();
 
     const completeItem = document.createElement('button');
-    completeItem.className = 'card-dropdown-item';
+    completeItem.className = 'card-dropdown-item success';
     completeItem.textContent = 'Отметить выполненной';
     completeItem.setAttribute('role', 'menuitem');
     completeItem.addEventListener('click', (e) => {
@@ -406,7 +406,7 @@ function showDetailsModal(task, onCardRefresh) {
     const rows = [
         ['Дата', formatDate(task.scheduled_date)],
         ['Исполнитель', task.assignee ? task.assignee.name : '—'],
-        ['Статус', getStatusLabel(task.status)],
+        ['Статус', [getStatusLabel(task.status), `status-badge status-${task.status}`]],
         ['Стоимость', `${task.sp_cost_current ?? 0} SP`],
         ['Выполнено', task.completed_at ? formatDate(task.completed_at.split('T')[0]) : '—'],
         ['Выполнил', task.completed_by ? task.completed_by.name : '—'],
@@ -429,7 +429,14 @@ function showDetailsModal(task, onCardRefresh) {
         labelEl.textContent = label;
         const valEl = document.createElement('span');
         valEl.className = 'task-details-row-value';
-        valEl.textContent = value;
+        if (Array.isArray(value)) {
+            const badge = document.createElement('span');
+            badge.className = value[1];
+            badge.textContent = value[0];
+            valEl.appendChild(badge);
+        } else {
+            valEl.textContent = value;
+        }
         row.appendChild(labelEl);
         row.appendChild(valEl);
         body.appendChild(row);
