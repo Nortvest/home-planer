@@ -47,7 +47,7 @@ class MaterializerUseCase:
 
             self._cleanup_orphaned(tpl, start, end, today, valid_dates)
 
-    def _cleanup_orphaned(
+    def _cleanup_orphaned(  # noqa: PLR0912
         self, tpl: TaskTemplate, start: date, end: date,
         today: date, valid_dates: set[date],
     ) -> None:
@@ -58,6 +58,8 @@ class MaterializerUseCase:
             if inst.scheduled_date < today:
                 continue
             if inst.is_done:
+                continue
+            if inst.is_cancelled:
                 continue
             if inst.scheduled_date not in valid_dates:
                 self._instance_repo.delete_by_id(inst.id)

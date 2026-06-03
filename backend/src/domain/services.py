@@ -6,8 +6,10 @@ from src.domain.value_objects import RecurrenceType, TaskStatus
 _MONTHS_IN_YEAR = 12
 
 
-def compute_status(instance: TaskInstance, today: date) -> TaskStatus:
+def compute_status(instance: TaskInstance, today: date) -> TaskStatus:  # noqa: PLR0911
     """Вычислить статус инстанса на основе scheduled_date и факта завершения."""
+    if instance.is_cancelled:
+        return TaskStatus.CANCELLED
     if instance.is_done:
         return TaskStatus.DONE
     if instance.scheduled_date < today:

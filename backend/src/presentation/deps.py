@@ -8,6 +8,7 @@ from src.application.ports import (
     UserRepository,
 )
 from src.application.use_cases import (
+    CancelInstanceUseCase,
     CompleteInstanceUseCase,
     GetCalendarUseCase,
     GetDashboardUseCase,
@@ -83,6 +84,17 @@ def get_complete_use_case() -> CompleteInstanceUseCase:
 def get_uncomplete_use_case() -> UncompleteInstanceUseCase:
     user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
     return UncompleteInstanceUseCase(
+        instance_repo,
+        user_repo,
+        transfer_repo,
+        template_repo,
+        clock,
+    )
+
+
+def get_cancel_use_case() -> CancelInstanceUseCase:
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    return CancelInstanceUseCase(
         instance_repo,
         user_repo,
         transfer_repo,

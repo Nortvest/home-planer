@@ -141,6 +141,28 @@
     display: flex;
 }
 
+.calendar-task-card.cancelled {
+    opacity: 0.35;
+}
+
+.calendar-task-card.cancelled .calendar-task-card-inner .calendar-task-title {
+    text-decoration: line-through;
+    color: var(--text-muted);
+}
+
+.calendar-task-card.cancelled .calendar-task-color-bar {
+    background-color: var(--text-muted) !important;
+}
+
+.calendar-task-card.cancelled .card-status-icon {
+    color: var(--text-muted);
+}
+
+.calendar-task-card.cancelled .calendar-task-sp {
+    color: var(--text-muted);
+    text-decoration: line-through;
+}
+
 .calendar-task-card.overdue .calendar-task-color-bar {
     background-color: var(--danger) !important;
 }

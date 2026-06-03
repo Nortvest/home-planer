@@ -5,6 +5,7 @@ class TaskStatus(StrEnum):
     PENDING = "pending"
     OVERDUE = "overdue"
     DONE = "done"
+    CANCELLED = "cancelled"
 
 
 class RecurrenceType(StrEnum):

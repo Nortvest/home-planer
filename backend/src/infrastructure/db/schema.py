@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from src.domain.value_objects import RecurrenceType
 
-SCHEMA_VERSION: int = 1
+SCHEMA_VERSION: int = 2
 
 
 @dataclass(frozen=True)
@@ -86,6 +86,7 @@ instance_columns = _columns([
     Column("completed_at", "TEXT"),
     Column("completed_by_id", "INTEGER"),
     Column("sp_cost_at_completion", "INTEGER"),
+    Column("cancelled_at", "TEXT"),
     Column("created_at", "TEXT", not_null=True, default="(datetime('now'))"),
 ])
 

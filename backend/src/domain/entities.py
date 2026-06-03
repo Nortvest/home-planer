@@ -74,6 +74,7 @@ class TaskInstance:
     completed_at: datetime | None = None
     completed_by_id: int | None = None
     sp_cost_at_completion: int | None = None
+    cancelled_at: datetime | None = None
     created_at: datetime | None = None
 
     def __post_init__(self) -> None:
@@ -87,6 +88,10 @@ class TaskInstance:
     @property
     def is_done(self) -> bool:
         return self.completed_at is not None
+
+    @property
+    def is_cancelled(self) -> bool:
+        return self.cancelled_at is not None
 
 
 @dataclass

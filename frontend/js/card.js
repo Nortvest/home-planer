@@ -15,6 +15,7 @@ function getStatusIcon(status) {
     switch (status) {
         case 'done': return '✓';
         case 'overdue': return '!';
+        case 'cancelled': return '✕';
         default: return '';
     }
 }
@@ -26,6 +27,8 @@ function renderTaskCard(task, onCardRefresh) {
 
     if (task.status === 'done') {
         card.classList.add('done');
+    } else if (task.status === 'cancelled') {
+        card.classList.add('cancelled');
     } else if (task.status === 'overdue') {
         card.classList.add('overdue');
     }
@@ -82,10 +85,12 @@ function renderTaskCard(task, onCardRefresh) {
     };
     card._dropdown = dropdown;
 
-    if (task.status !== 'done') {
-        buildDropdownItems(dropdown, task, onCardRefresh);
-    } else {
+    if (task.status === 'done') {
         buildDoneDropdownItems(dropdown, task, onCardRefresh);
+    } else if (task.status === 'cancelled') {
+        buildCancelledDropdownItems(dropdown, task, onCardRefresh);
+    } else {
+        buildDropdownItems(dropdown, task, onCardRefresh);
     }
 
     actionsBtn.addEventListener('click', (e) => {
@@ -122,6 +127,18 @@ function buildDoneDropdownForRefresh(card, actionsBtn, task) {
         e.stopPropagation();
         toggleDropdown(card, dropdown);
     });
+}
+
+function buildCancelledDropdownItems(dropdown, task, onCardRefresh) {
+    const detailItem = document.createElement('button');
+    detailItem.className = 'card-dropdown-item';
+    detailItem.textContent = 'Открыть детали';
+    detailItem.setAttribute('role', 'menuitem');
+    detailItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openTaskDetails(task.id, onCardRefresh);
+    });
+    dropdown.appendChild(detailItem);
 }
 
 function buildDoneDropdownItems(dropdown, task, onCardRefresh) {
@@ -252,6 +269,17 @@ function buildDropdownItems(dropdown, task, onCardRefresh) {
 
     dropdown.appendChild(createSeparator());
 
+    const cancelItem = document.createElement('button');
+    cancelItem.className = 'card-dropdown-item';
+    cancelItem.textContent = 'Отменить задачу';
+    cancelItem.setAttribute('role', 'menuitem');
+    cancelItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelTask(task.id, onCardRefresh);
+        closeAllDropdowns();
+    });
+    dropdown.appendChild(cancelItem);
+
     const detailItem = document.createElement('button');
     detailItem.className = 'card-dropdown-item';
     detailItem.textContent = 'Открыть детали';
@@ -288,6 +316,18 @@ async function reassignTask(taskId, toUserId, onCardRefresh) {
         const updated = await post(`/instances/${taskId}/reassign`, {
             to_user_id: toUserId,
         });
+        closeAllDropdowns();
+        if (updated && onCardRefresh) {
+            onCardRefresh(updated);
+        }
+    } catch {
+        // error toast handled by api.js
+    }
+}
+
+async function cancelTask(taskId, onCardRefresh) {
+    try {
+        const updated = await post(`/instances/${taskId}/cancel`);
         closeAllDropdowns();
         if (updated && onCardRefresh) {
             onCardRefresh(updated);
@@ -396,6 +436,7 @@ function getStatusLabel(status) {
         case 'done': return 'Выполнено';
         case 'overdue': return 'Просрочено';
         case 'pending': return 'Ожидает';
+        case 'cancelled': return 'Отменено';
         default: return status;
     }
 }
@@ -501,6 +542,8 @@ function updateCardInDOM(taskEl, updatedTask) {
     card.className = 'calendar-task-card';
     if (updatedTask.status === 'done') {
         card.classList.add('done');
+    } else if (updatedTask.status === 'cancelled') {
+        card.classList.add('cancelled');
     } else if (updatedTask.status === 'overdue') {
         card.classList.add('overdue');
     }
@@ -536,7 +579,27 @@ function updateCardInDOM(taskEl, updatedTask) {
         existingDropdown.remove();
     }
 
-    if (updatedTask.status !== 'done') {
+    if (updatedTask.status === 'cancelled') {
+        const existingDropdown2 = card.querySelector('.card-dropdown');
+        if (existingDropdown2) {
+            existingDropdown2.remove();
+        }
+        const dropdown2 = document.createElement('div');
+        dropdown2.className = 'card-dropdown';
+        dropdown2.setAttribute('role', 'menu');
+        dropdown2._resetPosition = () => {
+            dropdown2.style.position = '';
+            dropdown2.style.top = '';
+            dropdown2.style.left = '';
+            dropdown2.style.zIndex = '';
+        };
+        buildCancelledDropdownItems(dropdown2, updatedTask, card._onCardRefresh);
+        card._dropdown = dropdown2;
+        actionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown(card, dropdown2);
+        });
+    } else if (updatedTask.status !== 'done') {
         const dropdown = document.createElement('div');
         dropdown.className = 'card-dropdown';
         dropdown.setAttribute('role', 'menu');

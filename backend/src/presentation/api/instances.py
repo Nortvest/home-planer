@@ -2,10 +2,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.application.dtos import TaskInstanceDTO, TaskTransferDTO
-from src.application.use_cases import CompleteInstanceUseCase, ReassignInstanceUseCase, UncompleteInstanceUseCase
+from src.application.use_cases import (
+    CancelInstanceUseCase,
+    CompleteInstanceUseCase,
+    ReassignInstanceUseCase,
+    UncompleteInstanceUseCase,
+)
 from src.application.use_cases.instances import _get_transfers_dto, _to_instance_dto
 from src.domain.exceptions import (
     DomainError,
+    InstanceAlreadyCancelledError,
     InstanceAlreadyCompletedError,
     InstanceNotCompletedError,
     InstanceNotFoundError,
@@ -17,7 +23,12 @@ from src.infrastructure.repos.template_repo_sqlite import SqliteTemplateReposito
 from src.infrastructure.repos.transfer_repo_sqlite import SqliteTransferRepository
 from src.infrastructure.repos.user_repo_sqlite import SqliteUserRepository
 from src.infrastructure.settings import get_settings
-from src.presentation.deps import get_complete_use_case, get_reassign_use_case, get_uncomplete_use_case
+from src.presentation.deps import (
+    get_cancel_use_case,
+    get_complete_use_case,
+    get_reassign_use_case,
+    get_uncomplete_use_case,
+)
 from src.presentation.schemas import (
     CompleteIn,
     ReassignIn,
@@ -33,6 +44,7 @@ router = APIRouter(prefix="/api/instances", tags=["instances"])
 EXCEPTION_MAP: dict[type[DomainError], tuple[int, str]] = {
     InstanceNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
     UserNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
+    InstanceAlreadyCancelledError: (status.HTTP_409_CONFLICT, "conflict"),
     InstanceAlreadyCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
     InstanceNotCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
 }
@@ -143,6 +155,18 @@ def complete(
 def uncomplete(
     instance_id: int,
     uc: UncompleteInstanceUseCase = Depends(get_uncomplete_use_case),  # noqa: B008
+) -> TaskInstanceOut:
+    try:
+        inst = uc.execute(instance_id)
+    except DomainError as exc:
+        _handle_domain_error(exc)
+    return _instance_dto_to_out(inst)
+
+
+@router.post("/{instance_id:int}/cancel", response_model=TaskInstanceOut)
+def cancel(
+    instance_id: int,
+    uc: CancelInstanceUseCase = Depends(get_cancel_use_case),  # noqa: B008
 ) -> TaskInstanceOut:
     try:
         inst = uc.execute(instance_id)

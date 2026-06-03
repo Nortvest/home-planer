@@ -32,3 +32,7 @@ class DuplicateUserNameError(DomainError):
 
 class InstanceNotCompletedError(DomainError):
     """Попытка отменить выполнение незавершённого инстанса."""
+
+
+class InstanceAlreadyCancelledError(DomainError):
+    """Попытка отменить уже отменённый инстанс."""

@@ -69,7 +69,8 @@ class SqliteInstanceRepository(InstanceRepository):
             conn.execute(
                 "UPDATE task_instance SET "
                 "title = ?, scheduled_date = ?, assignee_id = ?, "
-                "completed_at = ?, completed_by_id = ?, sp_cost_at_completion = ? "
+                "completed_at = ?, completed_by_id = ?, sp_cost_at_completion = ?, "
+                "cancelled_at = ? "
                 "WHERE id = ?",
                 (
                     instance.title,
@@ -78,6 +79,7 @@ class SqliteInstanceRepository(InstanceRepository):
                     instance.completed_at.isoformat() if instance.completed_at else None,
                     instance.completed_by_id,
                     instance.sp_cost_at_completion,
+                    instance.cancelled_at.isoformat() if instance.cancelled_at else None,
                     instance.id,
                 ),
             )
@@ -93,6 +95,7 @@ class SqliteInstanceRepository(InstanceRepository):
             rows = conn.execute(
                 "SELECT * FROM task_instance "
                 "WHERE completed_by_id = ? AND completed_at IS NOT NULL "
+                "AND cancelled_at IS NULL "
                 "AND date(completed_at) >= ? AND date(completed_at) <= ? "
                 "ORDER BY completed_at DESC",
                 (user_id, start.isoformat(), end.isoformat()),
@@ -113,7 +116,7 @@ class SqliteInstanceRepository(InstanceRepository):
         with get_connection(self._db_path) as conn:
             rows = conn.execute(
                 "SELECT * FROM task_instance "
-                "WHERE scheduled_date < ? AND completed_at IS NULL "
+                "WHERE scheduled_date < ? AND completed_at IS NULL AND cancelled_at IS NULL "
                 "ORDER BY scheduled_date ASC",
                 (today.isoformat(),),
             ).fetchall()
@@ -124,13 +127,13 @@ class SqliteInstanceRepository(InstanceRepository):
             if status == "pending":
                 row = conn.execute(
                     "SELECT COUNT(*) AS cnt FROM task_instance "
-                    "WHERE scheduled_date >= ? AND completed_at IS NULL",
+                    "WHERE scheduled_date >= ? AND completed_at IS NULL AND cancelled_at IS NULL",
                     (today.isoformat(),),
                 ).fetchone()
             elif status == "overdue":
                 row = conn.execute(
                     "SELECT COUNT(*) AS cnt FROM task_instance "
-                    "WHERE scheduled_date < ? AND completed_at IS NULL",
+                    "WHERE scheduled_date < ? AND completed_at IS NULL AND cancelled_at IS NULL",
                     (today.isoformat(),),
                 ).fetchone()
             else:
@@ -170,5 +173,6 @@ class SqliteInstanceRepository(InstanceRepository):
             completed_at=datetime.fromisoformat(row["completed_at"]) if row["completed_at"] else None,
             completed_by_id=row["completed_by_id"],
             sp_cost_at_completion=row["sp_cost_at_completion"],
+            cancelled_at=datetime.fromisoformat(row["cancelled_at"]) if row["cancelled_at"] else None,
             created_at=datetime.fromisoformat(row["created_at"]),
         )
