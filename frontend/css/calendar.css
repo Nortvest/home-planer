@@ -127,11 +127,9 @@
 .calendar-task-card {
     display: flex;
     align-items: flex-start;
-    gap: 0.3rem;
-    padding: 0.25rem 0.35rem;
-    border-radius: 4px;
-    font-size: 0.72rem;
-    line-height: 1.25;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    line-height: 1.35;
     background-color: var(--bg-hover);
     cursor: pointer;
     transition: opacity 0.15s ease, background-color 0.15s ease;
@@ -181,9 +179,9 @@
 }
 
 .calendar-task-sp {
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    padding: 0 0.3rem;
+    padding: 0.15rem 0.4rem;
     border-radius: 3px;
     background-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
     color: var(--text-secondary);
