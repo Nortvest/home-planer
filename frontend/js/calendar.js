@@ -2,6 +2,18 @@ import { setupTheme } from './theme.js';
 import { get } from './api.js';
 import { renderTaskCard, updateCardInDOM, closeAllDropdowns } from './card.js';
 import { showToast } from './ui/toast.js';
+
+function parseDateStr(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+function toDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
 import {
     setUsers,
     getUsers,
@@ -47,13 +59,12 @@ function isOverdueDate(dateStr) {
 }
 
 function getWeekStartForDate(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = parseDateStr(dateStr);
     const dow = d.getDay();
     const offset = dow === 0 ? -6 : 1 - dow;
     const monday = new Date(d);
     monday.setDate(d.getDate() + offset);
-    monday.setHours(0, 0, 0, 0);
-    return monday.toISOString().split('T')[0];
+    return toDateStr(monday);
 }
 
 function getCurrentWeekStart() {
@@ -65,13 +76,13 @@ function isCurrentWeek() {
 }
 
 function addWeekDays(dateStr, delta) {
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = parseDateStr(dateStr);
     d.setDate(d.getDate() + delta * 7);
-    return d.toISOString().split('T')[0];
+    return toDateStr(d);
 }
 
 function formatDateForDisplay(dateStr) {
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = parseDateStr(dateStr);
     return `${d.getDate()}`;
 }
 
@@ -136,7 +147,7 @@ function renderNav(weekStartStr) {
         todayBtn.addEventListener('click', goToToday);
     }
 
-    const startD = new Date(weekStartStr + 'T00:00:00');
+    const startD = parseDateStr(weekStartStr);
     const endD = new Date(startD);
     endD.setDate(startD.getDate() + 6);
 
@@ -171,9 +182,9 @@ function buildWeekGrid(weekStartStr) {
     const today = todayStr();
 
     for (let i = 0; i < 7; i++) {
-        const d = new Date(weekStartStr + 'T00:00:00');
+        const d = parseDateStr(weekStartStr);
         d.setDate(d.getDate() + i);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = toDateStr(d);
 
         const cell = document.createElement('div');
         cell.className = 'calendar-day-cell';

@@ -1,3 +1,15 @@
+function toDateStr(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function parseDateStr(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
 const today = new Date();
 const todayDow = today.getDay();
 const weekStartOffset = todayDow === 0 ? -6 : 1 - todayDow;
@@ -8,7 +20,7 @@ weekStart.setHours(0, 0, 0, 0);
 const state = {
     currentYear: today.getFullYear(),
     currentMonth: today.getMonth() + 1,
-    currentWeekStart: weekStart.toISOString().split('T')[0],
+    currentWeekStart: toDateStr(weekStart),
     users: [],
     calendarTasks: {},
     lastLoadedMonth: null,
@@ -73,7 +85,7 @@ export function clearCalendarCache() {
 
 export function setWeekStart(dateStr) {
     state.currentWeekStart = dateStr;
-    const d = new Date(dateStr + 'T00:00:00');
+    const d = parseDateStr(dateStr);
     state.currentYear = d.getFullYear();
     state.currentMonth = d.getMonth() + 1;
     if (d.getDate() <= 3) {
@@ -96,12 +108,12 @@ export function getLastLoadedWeek() {
 }
 
 export function getWeekRange() {
-    const start = new Date(state.currentWeekStart + 'T00:00:00');
+    const start = parseDateStr(state.currentWeekStart);
     const end = new Date(start);
     end.setDate(start.getDate() + 6);
     return {
         start: state.currentWeekStart,
-        end: end.toISOString().split('T')[0],
+        end: toDateStr(end),
     };
 }
 
