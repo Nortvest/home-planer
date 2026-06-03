@@ -14,6 +14,8 @@ import {
     getWeekTasks,
     updateTaskInWeekState,
     clearCalendarCache,
+    setMonthOverview,
+    getMonthOverview,
 } from './state.js';
 
 setupTheme();
@@ -309,20 +311,34 @@ async function loadWeek(start, end) {
         renderNav(start);
         buildWeekGrid(start);
         populateWeekTasks(cached);
+        updateMiniCalendarForCurrentMonth();
         return;
     }
 
     showLoading();
 
     try {
-        const data = await get(`/calendar/range?start=${start}&end=${end}`);
+        const now = new Date();
+        const [weekData, monthData] = await Promise.all([
+            get(`/calendar/range?start=${start}&end=${end}`),
+            get(`/calendar?year=${now.getFullYear()}&month=${now.getMonth() + 1}`)
+        ]);
 
         setWeekStart(start);
         setLastLoadedWeek(start);
-        setUsers(data.users || []);
+        setUsers(weekData.users || []);
 
-        const daysData = data.days || {};
+        const daysData = weekData.days || {};
         setWeekTasks(start, daysData);
+
+        const monthDays = monthData.days || {};
+        setMonthOverview(now.getFullYear(), now.getMonth(), monthDays);
+
+        const widget = document.querySelector('.mini-calendar-widget');
+        if (widget) {
+            widget.__daysData = monthDays;
+            buildMiniCalendarContent(now.getFullYear(), now.getMonth(), monthDays, widget);
+        }
 
         renderNav(start);
         buildWeekGrid(start);
@@ -363,11 +379,265 @@ function goToToday() {
     loadWeek(start, end);
 }
 
+let miniCalTooltipEl = null;
+let miniCalTooltipTimer = null;
+
+function getDaysInMonth(year, month) {
+    return new Date(year, month + 1, 0).getDate();
+}
+
+function getFirstDowOfMonth(year, month) {
+    const d = new Date(year, month, 1).getDay();
+    return d === 0 ? 6 : d - 1;
+}
+
+function buildMiniCalendarContent(year, month, daysData, container) {
+    container.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'mini-cal-header';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'mini-cal-nav-btn';
+    prevBtn.textContent = '\u2039';
+    prevBtn.title = 'Предыдущий месяц';
+    prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const m = month === 0 ? 11 : month - 1;
+        const y = month === 0 ? year - 1 : year;
+        loadMonthOverview(y, m);
+    });
+
+    const title = document.createElement('span');
+    title.className = 'mini-cal-title';
+    title.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'mini-cal-nav-btn';
+    nextBtn.textContent = '\u203A';
+    nextBtn.title = 'Следующий месяц';
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        loadMonthOverview(nextYear, nextMonth);
+    });
+
+    header.appendChild(prevBtn);
+    header.appendChild(title);
+    header.appendChild(nextBtn);
+    container.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'mini-cal-grid';
+
+    for (const name of ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']) {
+        const hc = document.createElement('div');
+        hc.className = 'mini-cal-header-cell';
+        hc.textContent = name;
+        grid.appendChild(hc);
+    }
+
+    const dow = getFirstDowOfMonth(year, month);
+    const totalDays = getDaysInMonth(year, month);
+
+    for (let i = 0; i < dow; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'mini-cal-day empty';
+        grid.appendChild(empty);
+    }
+
+    for (let d = 1; d <= totalDays; d++) {
+        const dateObj = new Date(year, month, d);
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const tasks = (daysData && daysData[dateStr]) || [];
+        const taskCount = tasks.length;
+
+        const dayEl = document.createElement('div');
+        dayEl.className = 'mini-cal-day';
+
+        if (dateStr === todayStr()) {
+            dayEl.classList.add('today');
+        }
+
+        const numEl = document.createElement('span');
+        numEl.className = 'mini-cal-day-num';
+        numEl.textContent = d;
+        dayEl.appendChild(numEl);
+
+        if (taskCount > 0) {
+            const badge = document.createElement('span');
+            badge.className = 'mini-cal-badge';
+            badge.textContent = taskCount;
+            dayEl.appendChild(badge);
+        }
+
+        dayEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const weekStartForDate = getWeekStartForDate(dateStr);
+            if (weekStartForDate > getCurrentWeekStart()) {
+                showToast('Переход к будущим неделям недоступен', 'error');
+                return;
+            }
+            closeMobileMiniCal();
+            setWeekStart(weekStartForDate);
+            clearCalendarCache();
+            closeAllDropdowns();
+            const end = addWeekDays(weekStartForDate, 1);
+            loadWeek(weekStartForDate, end);
+            updateMiniCalendarForCurrentMonth();
+        });
+
+        dayEl.addEventListener('mouseenter', () => {
+            showMiniCalTooltip(dayEl, tasks);
+        });
+
+        dayEl.addEventListener('mouseleave', () => {
+            hideMiniCalTooltip();
+        });
+
+        grid.appendChild(dayEl);
+    }
+
+    container.appendChild(grid);
+}
+
+function showMiniCalTooltip(el, tasks) {
+    if (tasks.length === 0) return;
+
+    hideMiniCalTooltip();
+
+    miniCalTooltipEl = document.createElement('div');
+    miniCalTooltipEl.className = 'mini-cal-tooltip';
+
+    for (const task of tasks) {
+        const line = document.createElement('div');
+        line.className = 'mini-cal-tooltip-line';
+        line.textContent = task.title;
+        miniCalTooltipEl.appendChild(line);
+    }
+
+    const rect = el.getBoundingClientRect();
+    miniCalTooltipEl.style.top = `${rect.bottom + 4}px`;
+    miniCalTooltipEl.style.left = `${Math.min(rect.left, window.innerWidth - 220)}px`;
+    document.body.appendChild(miniCalTooltipEl);
+}
+
+function hideMiniCalTooltip() {
+    if (miniCalTooltipEl) {
+        miniCalTooltipEl.remove();
+        miniCalTooltipEl = null;
+    }
+}
+
+function updateMiniCalendarForCurrentMonth() {
+    const now = new Date();
+    loadMonthOverview(now.getFullYear(), now.getMonth());
+}
+
+async function loadMonthOverview(year, month) {
+    try {
+        const data = await get(`/calendar?year=${year}&month=${month + 1}`);
+        const daysData = data.days || {};
+        setMonthOverview(year, month, daysData);
+
+        const widget = document.querySelector('.mini-calendar-widget');
+        if (widget) {
+            buildMiniCalendarContent(year, month, daysData, widget);
+            widget.__daysData = daysData;
+        }
+
+        if (window.__miniCalModalOpen) {
+            const modalContent = document.querySelector('.mini-cal-modal-content');
+            if (modalContent) {
+                buildMiniCalendarContent(year, month, daysData, modalContent);
+            }
+        }
+    } catch (err) {
+        // Silent fail for background month overview load
+    }
+}
+
+function initMiniCalendarDesktop() {
+    const widget = document.createElement('div');
+    widget.className = 'mini-calendar-widget';
+    document.body.appendChild(widget);
+
+    const now = new Date();
+    loadMonthOverview(now.getFullYear(), now.getMonth());
+}
+
+function closeMobileMiniCal() {
+    window.__miniCalModalOpen = false;
+    const overlay = document.querySelector('.mini-cal-mobile-overlay');
+    if (overlay) {
+        overlay.remove();
+    }
+    hideMiniCalTooltip();
+}
+
+function openMobileMiniCal() {
+    if (window.__miniCalModalOpen) return;
+    window.__miniCalModalOpen = true;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'mini-cal-mobile-overlay';
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeMobileMiniCal();
+    });
+
+    document.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') {
+            document.removeEventListener('keydown', onEsc);
+            closeMobileMiniCal();
+        }
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'mini-cal-modal';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'mini-cal-modal-close';
+    closeBtn.textContent = '\u00D7';
+    closeBtn.title = 'Закрыть';
+    closeBtn.addEventListener('click', closeMobileMiniCal);
+    modal.appendChild(closeBtn);
+
+    const content = document.createElement('div');
+    content.className = 'mini-cal-modal-content';
+    modal.appendChild(content);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const overview = getMonthOverview();
+    if (overview.year && overview.month) {
+        buildMiniCalendarContent(overview.year, overview.month - 1, overview.days, content);
+    } else {
+        const now = new Date();
+        loadMonthOverview(now.getFullYear(), now.getMonth());
+        const ov = getMonthOverview();
+        buildMiniCalendarContent(ov.year, ov.month - 1, ov.days, content);
+    }
+}
+
+function initMiniCalendar() {
+    const toggle = document.getElementById('mini-cal-toggle');
+    if (toggle) {
+        toggle.addEventListener('click', openMobileMiniCal);
+    }
+
+    if (window.matchMedia('(min-width: 601px)').matches) {
+        initMiniCalendarDesktop();
+    }
+}
+
 function init() {
     const currentWeekStart = getCurrentWeekStart();
     setWeekStart(currentWeekStart);
     const { start, end } = getWeekRange();
     loadWeek(start, end);
+    initMiniCalendar();
 }
 
 init();

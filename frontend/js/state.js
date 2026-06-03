@@ -13,6 +13,9 @@ const state = {
     calendarTasks: {},
     lastLoadedMonth: null,
     lastLoadedWeek: null,
+    monthOverviewYear: null,
+    monthOverviewMonth: null,
+    monthOverviewDays: null,
 };
 
 export function setUsers(users) {
@@ -63,6 +66,9 @@ export function clearCalendarCache() {
     state.calendarTasks = {};
     state.lastLoadedMonth = null;
     state.lastLoadedWeek = null;
+    state.monthOverviewYear = null;
+    state.monthOverviewMonth = null;
+    state.monthOverviewDays = null;
 }
 
 export function setWeekStart(dateStr) {
@@ -106,6 +112,20 @@ export function setWeekTasks(weekStart, daysData) {
 export function getWeekTasks(weekStart) {
     const data = state.calendarTasks[`week:${weekStart}`];
     return data || null;
+}
+
+export function setMonthOverview(year, month, daysData) {
+    state.monthOverviewYear = year;
+    state.monthOverviewMonth = month;
+    state.monthOverviewDays = daysData;
+}
+
+export function getMonthOverview() {
+    return {
+        year: state.monthOverviewYear,
+        month: state.monthOverviewMonth,
+        days: state.monthOverviewDays,
+    };
 }
 
 export function updateTaskInWeekState(weekStart, taskId, updater) {
