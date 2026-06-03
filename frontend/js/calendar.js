@@ -412,16 +412,27 @@ function buildMiniCalendarContent(year, month, daysData, container) {
     title.className = 'mini-cal-title';
     title.textContent = `${MONTH_NAMES[month]} ${year}`;
 
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    const isFutureMonth = nextYear > currentYear || (nextYear === currentYear && nextMonth > currentMonth);
+
     const nextBtn = document.createElement('button');
     nextBtn.className = 'mini-cal-nav-btn';
     nextBtn.textContent = '\u203A';
     nextBtn.title = 'Следующий месяц';
-    const nextMonth = month === 11 ? 0 : month + 1;
-    const nextYear = month === 11 ? year + 1 : year;
-    nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        loadMonthOverview(nextYear, nextMonth);
-    });
+    if (isFutureMonth) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.3';
+        nextBtn.style.cursor = 'default';
+    } else {
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loadMonthOverview(nextYear, nextMonth);
+        });
+    }
 
     header.appendChild(prevBtn);
     header.appendChild(title);
@@ -611,13 +622,13 @@ function openMobileMiniCal() {
     document.body.appendChild(overlay);
 
     const overview = getMonthOverview();
-    if (overview.year && overview.month) {
-        buildMiniCalendarContent(overview.year, overview.month - 1, overview.days, content);
+    if (overview.year !== null && overview.month !== null) {
+        buildMiniCalendarContent(overview.year, overview.month, overview.days, content);
     } else {
         const now = new Date();
         loadMonthOverview(now.getFullYear(), now.getMonth());
         const ov = getMonthOverview();
-        buildMiniCalendarContent(ov.year, ov.month - 1, ov.days, content);
+        buildMiniCalendarContent(ov.year, ov.month, ov.days, content);
     }
 }
 
