@@ -162,9 +162,10 @@ class TestReassignInstanceUseCase:
         user_repo = MockUserRepoTest([u1, u2])
         inst_repo = MockInstanceRepoTest([inst])
         trans_repo = MockTransferRepoTest()
+        tmpl_repo = MockTemplateRepoTest([])
         clock = FixedClock(date(2026, 6, 1))
 
-        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, clock)
+        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, tmpl_repo, clock)
         result = uc.execute(1, 2)
 
         assert result.assignee is not None
@@ -179,9 +180,10 @@ class TestReassignInstanceUseCase:
         user_repo = MockUserRepoTest([u2])
         inst_repo = MockInstanceRepoTest([])
         trans_repo = MockTransferRepoTest()
+        tmpl_repo = MockTemplateRepoTest([])
         clock = FixedClock(date(2026, 6, 1))
 
-        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, clock)
+        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, tmpl_repo, clock)
         with pytest.raises(InstanceNotFoundError):
             uc.execute(999, 2)
 
@@ -192,9 +194,10 @@ class TestReassignInstanceUseCase:
         user_repo = MockUserRepoTest([u1])
         inst_repo = MockInstanceRepoTest([inst])
         trans_repo = MockTransferRepoTest()
+        tmpl_repo = MockTemplateRepoTest([])
         clock = FixedClock(date(2026, 6, 1))
 
-        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, clock)
+        uc = ReassignInstanceUseCase(inst_repo, user_repo, trans_repo, tmpl_repo, clock)
         with pytest.raises(UserNotFoundError):
             uc.execute(1, 999)
 

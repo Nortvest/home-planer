@@ -81,8 +81,8 @@ def get_calendar_range_use_case() -> GetCalendarRangeUseCase:
 
 
 def get_reassign_use_case() -> ReassignInstanceUseCase:
-    user_repo, _, instance_repo, transfer_repo, clock = _make_repos()
-    return ReassignInstanceUseCase(instance_repo, user_repo, transfer_repo, clock)
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    return ReassignInstanceUseCase(instance_repo, user_repo, transfer_repo, template_repo, clock)
 
 
 def get_complete_use_case() -> CompleteInstanceUseCase:

@@ -25,11 +25,13 @@ class ReassignInstanceUseCase:
         instance_repo: InstanceRepository,
         user_repo: UserRepository,
         transfer_repo: TransferRepository,
+        template_repo: TemplateRepository,
         clock: Clock,
     ) -> None:
         self._instance_repo = instance_repo
         self._user_repo = user_repo
         self._transfer_repo = transfer_repo
+        self._template_repo = template_repo
         self._clock = clock
 
     def execute(self, instance_id: int, to_user_id: int) -> TaskInstanceDTO:
@@ -53,7 +55,7 @@ class ReassignInstanceUseCase:
         instance.assignee_id = to_user_id
         updated = self._instance_repo.update(instance)
         return _to_instance_dto(
-            updated, self._user_repo, self._transfer_repo, self._clock,
+            updated, self._user_repo, self._transfer_repo, self._clock, self._template_repo,
         )
 
 
