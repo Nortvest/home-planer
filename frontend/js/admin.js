@@ -12,10 +12,9 @@ const COLOR_PRESETS = [
 ];
 
 const RECURRENCE_OPTIONS = [
-    { value: 'none', label: 'Нет (разовая)' },
     { value: 'daily', label: 'Ежедневно' },
     { value: 'weekly', label: 'Еженедельно' },
-    { value: 'every_n_days', label: 'Каждые N дней' }
+    { value: 'every_n_days', label: 'Каждые N дней' },
 ];
 
 const WEEKDAYS = [
@@ -497,7 +496,7 @@ function openTemplateForm(templateId) {
     const title = template ? template.title : '';
     const description = template ? (template.description || '') : '';
     const spCost = template ? template.sp_cost : 1;
-    const recType = template ? template.recurrence_type : 'none';
+    const recType = template ? template.recurrence_type : '';
     const recParams = template ? (template.recurrence_params || {}) : {};
     const defaultAssignee = template ? (template.default_assignee_id || '') : '';
 
@@ -518,6 +517,7 @@ function openTemplateForm(templateId) {
         <div class="form-group">
             <label class="form-label" for="tf-rec">Тип повторения</label>
             <select class="form-select" id="tf-rec">
+                <option value="">— Выберите —</option>
                 ${RECURRENCE_OPTIONS.map(o => `
                     <option value="${o.value}" ${recType === o.value ? 'selected' : ''}>${o.label}</option>
                 `).join('')}
@@ -578,6 +578,12 @@ function openTemplateForm(templateId) {
 
         if (!titleVal) {
             errorEl.textContent = 'Введите название';
+            submitted = false;
+            return;
+        }
+
+        if (!recVal) {
+            errorEl.textContent = 'Выберите тип повторения (разовые задачи — в календаре)';
             submitted = false;
             return;
         }
