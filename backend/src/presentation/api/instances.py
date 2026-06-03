@@ -1,4 +1,5 @@
 """Роутер действий над инстансами: /api/instances."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.application.dtos import TaskInstanceDTO, TaskTransferDTO
@@ -6,6 +7,7 @@ from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
     CreateInstanceUseCase,
+    DeleteInstanceUseCase,
     ReassignInstanceUseCase,
     RestoreInstanceUseCase,
     UncompleteInstanceUseCase,
@@ -29,6 +31,7 @@ from src.presentation.deps import (
     get_cancel_use_case,
     get_complete_use_case,
     get_create_instance_use_case,
+    get_delete_use_case,
     get_reassign_use_case,
     get_restore_use_case,
     get_uncomplete_use_case,
@@ -75,7 +78,8 @@ EXCEPTION_MAP: dict[type[DomainError], tuple[int, str]] = {
 
 def _handle_domain_error(exc: DomainError) -> None:
     http_code, error_code = EXCEPTION_MAP.get(
-        type(exc), (status.HTTP_500_INTERNAL_SERVER_ERROR, "internal_error"),
+        type(exc),
+        (status.HTTP_500_INTERNAL_SERVER_ERROR, "internal_error"),
     )
     raise HTTPException(
         status_code=http_code,
@@ -94,18 +98,12 @@ def _instance_dto_to_out(inst: TaskInstanceDTO) -> TaskInstanceOut:
         sp_cost_current=inst.sp_cost_current,
         sp_cost_at_completion=inst.sp_cost_at_completion,
         completed_at=inst.completed_at,
-        completed_by=(
-            UserOut.model_validate(inst.completed_by.__dict__) if inst.completed_by else None
-        ),
+        completed_by=(UserOut.model_validate(inst.completed_by.__dict__) if inst.completed_by else None),
         transfers=[
             TaskTransferOut(
                 id=t.id,
-                from_user=(
-                    UserOut.model_validate(t.from_user.__dict__) if t.from_user else None
-                ),
-                to_user=(
-                    UserOut.model_validate(t.to_user.__dict__) if t.to_user else None
-                ),
+                from_user=(UserOut.model_validate(t.from_user.__dict__) if t.from_user else None),
+                to_user=(UserOut.model_validate(t.to_user.__dict__) if t.to_user else None),
                 transferred_at=t.transferred_at,
             )
             for t in inst.transfers
@@ -116,12 +114,8 @@ def _instance_dto_to_out(inst: TaskInstanceDTO) -> TaskInstanceOut:
 def _transfer_dto_to_out(t: TaskTransferDTO) -> TaskTransferOut:
     return TaskTransferOut(
         id=t.id,
-        from_user=(
-            UserOut.model_validate(t.from_user.__dict__) if t.from_user else None
-        ),
-        to_user=(
-            UserOut.model_validate(t.to_user.__dict__) if t.to_user else None
-        ),
+        from_user=(UserOut.model_validate(t.from_user.__dict__) if t.from_user else None),
+        to_user=(UserOut.model_validate(t.to_user.__dict__) if t.to_user else None),
         transferred_at=t.transferred_at,
     )
 
@@ -143,7 +137,11 @@ def get_instance(instance_id: int) -> TaskInstanceOut:
         )
 
     inst_dto = _to_instance_dto(
-        instance, user_repo, transfer_repo, clock, template_repo_instance,
+        instance,
+        user_repo,
+        transfer_repo,
+        clock,
+        template_repo_instance,
     )
     return _instance_dto_to_out(inst_dto)
 
@@ -208,6 +206,17 @@ def restore(
     except DomainError as exc:
         _handle_domain_error(exc)
     return _instance_dto_to_out(inst)
+
+
+@router.delete("/{instance_id:int}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_instance(
+    instance_id: int,
+    uc: DeleteInstanceUseCase = Depends(get_delete_use_case),  # noqa: B008
+) -> None:
+    try:
+        uc.execute(instance_id)
+    except DomainError as exc:
+        _handle_domain_error(exc)
 
 
 @router.get("/{instance_id:int}/transfers", response_model=TransfersOut)

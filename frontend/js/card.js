@@ -1,4 +1,4 @@
-import { post, get } from './api.js';
+import { post, get, del } from './api.js';
 import {
     getUsers,
 } from './state.js';
@@ -291,6 +291,17 @@ function buildDropdownItems(dropdown, task, onCardRefresh) {
     });
     dropdown.appendChild(cancelItem);
 
+    const deleteItem = document.createElement('button');
+    deleteItem.className = 'card-dropdown-item danger';
+    deleteItem.textContent = 'Удалить задачу';
+    deleteItem.setAttribute('role', 'menuitem');
+    deleteItem.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteTask(task.id, onCardRefresh);
+        closeAllDropdowns();
+    });
+    dropdown.appendChild(deleteItem);
+
     const detailItem = document.createElement('button');
     detailItem.className = 'card-dropdown-item';
     detailItem.textContent = 'Открыть детали';
@@ -354,6 +365,20 @@ async function restoreTask(taskId, onCardRefresh) {
         closeAllDropdowns();
         if (updated && onCardRefresh) {
             onCardRefresh(updated);
+        }
+    } catch {
+        // error toast handled by api.js
+    }
+}
+
+async function deleteTask(taskId, onCardRefresh) {
+    const confirmed = confirm('Удалить задачу без возможности восстановления?');
+    if (!confirmed) return;
+    try {
+        await del(`/instances/${taskId}`);
+        closeAllDropdowns();
+        if (onCardRefresh) {
+            onCardRefresh({ id: taskId, __deleted: true });
         }
     } catch {
         // error toast handled by api.js

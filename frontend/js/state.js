@@ -155,3 +155,18 @@ export function updateTaskInWeekState(weekStart, taskId, updater) {
     }
     return false;
 }
+
+export function removeTaskFromWeekState(weekStart, taskId) {
+    const key = `week:${weekStart}`;
+    const days = state.calendarTasks[key];
+    if (!days) return false;
+    for (const dateKey of Object.keys(days)) {
+        const tasks = days[dateKey];
+        const idx = tasks.findIndex(t => t.id === taskId);
+        if (idx !== -1) {
+            tasks.splice(idx, 1);
+            return true;
+        }
+    }
+    return false;
+}

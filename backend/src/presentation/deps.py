@@ -11,6 +11,7 @@ from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
     CreateInstanceUseCase,
+    DeleteInstanceUseCase,
     GetCalendarRangeUseCase,
     GetCalendarUseCase,
     GetDashboardUseCase,
@@ -139,6 +140,11 @@ def get_dashboard_use_case() -> GetDashboardUseCase:
         transfer_repo,
         clock,
     )
+
+
+def get_delete_use_case() -> DeleteInstanceUseCase:
+    _, _, instance_repo, *_ = _make_repos()
+    return DeleteInstanceUseCase(instance_repo)
 
 
 def get_create_instance_use_case() -> CreateInstanceUseCase:

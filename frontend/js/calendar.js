@@ -25,6 +25,7 @@ import {
     setWeekTasks,
     getWeekTasks,
     updateTaskInWeekState,
+    removeTaskFromWeekState,
     clearCalendarCache,
     setMonthOverview,
     getMonthOverview,
@@ -223,6 +224,10 @@ function buildWeekGrid(weekStartStr) {
 }
 
 function onCardRefresh(updatedTask) {
+    if (updatedTask.__deleted) {
+        removeCardFromView(updatedTask.id);
+        return;
+    }
     const weekStart = getWeekStart();
     updateTaskInWeekState(weekStart, updatedTask.id, (t) => {
         Object.assign(t, updatedTask);
@@ -233,6 +238,28 @@ function onCardRefresh(updatedTask) {
     } else {
         const { start, end } = getWeekRange();
         loadWeek(start, end);
+    }
+}
+
+function removeCardFromView(taskId) {
+    const weekStart = getWeekStart();
+    removeTaskFromWeekState(weekStart, taskId);
+    const cardEl = document.querySelector(`.calendar-task-card[data-task-id="${taskId}"]`);
+    if (cardEl && cardEl.parentNode) {
+        cardEl.parentNode.removeChild(cardEl);
+    }
+    const remaining = document.querySelectorAll('.calendar-task-card');
+    if (remaining.length === 0) {
+        const grid = document.querySelector('.calendar-grid');
+        if (grid) {
+            const existing = grid.querySelector('.calendar-empty');
+            if (!existing) {
+                const empty = document.createElement('div');
+                empty.className = 'calendar-empty';
+                empty.textContent = 'В этой неделе задач нет. Создайте шаблон в админке, чтобы начать.';
+                grid.appendChild(empty);
+            }
+        }
     }
 }
 

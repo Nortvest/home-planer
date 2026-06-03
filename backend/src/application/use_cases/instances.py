@@ -63,7 +63,11 @@ class CreateInstanceUseCase:
         )
         created = self._instance_repo.create(instance)
         return _to_instance_dto(
-            created, self._user_repo, self._transfer_repo, self._clock, self._template_repo,
+            created,
+            self._user_repo,
+            self._transfer_repo,
+            self._clock,
+            self._template_repo,
         )
 
 
@@ -103,7 +107,11 @@ class ReassignInstanceUseCase:
         instance.assignee_id = to_user_id
         updated = self._instance_repo.update(instance)
         return _to_instance_dto(
-            updated, self._user_repo, self._transfer_repo, self._clock, self._template_repo,
+            updated,
+            self._user_repo,
+            self._transfer_repo,
+            self._clock,
+            self._template_repo,
         )
 
 
@@ -256,6 +264,21 @@ class RestoreInstanceUseCase:
             self._clock,
             self._template_repo,
         )
+
+
+class DeleteInstanceUseCase:
+    def __init__(
+        self,
+        instance_repo: InstanceRepository,
+    ) -> None:
+        self._instance_repo = instance_repo
+
+    def execute(self, instance_id: int) -> None:
+        instance = self._instance_repo.get(instance_id)
+        if instance is None:
+            raise InstanceNotFoundError(f"Инстанс не найден: {instance_id}")
+
+        self._instance_repo.delete_by_id(instance_id)
 
 
 def _validate_complete_request(
