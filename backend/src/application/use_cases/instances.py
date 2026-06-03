@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from src.application.dtos import TaskInstanceDTO, TaskTransferDTO, UserDTO
 from src.application.ports import (
@@ -10,6 +10,7 @@ from src.application.ports import (
 )
 from src.domain.entities import TaskInstance, TaskTransfer
 from src.domain.exceptions import (
+    DomainError,
     InstanceAlreadyCancelledError,
     InstanceAlreadyCompletedError,
     InstanceNotCompletedError,
@@ -17,6 +18,53 @@ from src.domain.exceptions import (
     UserNotFoundError,
 )
 from src.domain.services import compute_status
+
+
+class CreateInstanceUseCase:
+    """Создание standalone инстанса (разовая задача) без привязки к шаблону."""
+
+    def __init__(
+        self,
+        instance_repo: InstanceRepository,
+        user_repo: UserRepository,
+        transfer_repo: TransferRepository,
+        template_repo: TemplateRepository,
+        clock: Clock,
+    ) -> None:
+        self._instance_repo = instance_repo
+        self._user_repo = user_repo
+        self._transfer_repo = transfer_repo
+        self._template_repo = template_repo
+        self._clock = clock
+
+    def execute(
+        self,
+        title: str,
+        scheduled_date: date,
+        sp_cost: int = 0,
+        assignee_id: int | None = None,
+    ) -> TaskInstanceDTO:
+        today = self._clock.today()
+        if scheduled_date < today:
+            raise DomainError("Нельзя создать задачу на прошедшую дату")
+
+        if assignee_id is not None:
+            user = self._user_repo.get(assignee_id)
+            if user is None:
+                raise UserNotFoundError(f"Пользователь не найден: {assignee_id}")
+
+        instance = TaskInstance(
+            id=0,
+            template_id=None,
+            title=title,
+            scheduled_date=scheduled_date,
+            sp_cost=sp_cost,
+            assignee_id=assignee_id,
+        )
+        created = self._instance_repo.create(instance)
+        return _to_instance_dto(
+            created, self._user_repo, self._transfer_repo, self._clock, self._template_repo,
+        )
 
 
 class ReassignInstanceUseCase:
@@ -87,6 +135,8 @@ class CompleteInstanceUseCase:
             tpl = self._template_repo.get(instance.template_id)
             if tpl is not None:
                 sp_cost = tpl.sp_cost
+        else:
+            sp_cost = instance.sp_cost
 
         instance.completed_at = datetime.now(tz=timezone.utc)
         instance.completed_by_id = completed_by_id
@@ -246,7 +296,7 @@ def _to_instance_dto(
         tpl = template_repo.get(inst.template_id)
         sp_current = tpl.sp_cost if tpl is not None else 0
     else:
-        sp_current = 0
+        sp_current = inst.sp_cost
 
     transfers = _get_transfers_dto(inst.id, transfer_repo, user_repo)
 

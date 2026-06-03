@@ -1,5 +1,5 @@
 import { setupTheme } from './theme.js';
-import { get } from './api.js';
+import { get, post } from './api.js';
 import { renderTaskCard, updateCardInDOM, closeAllDropdowns } from './card.js';
 import { showToast } from './ui/toast.js';
 
@@ -206,6 +206,17 @@ function buildWeekGrid(weekStartStr) {
         tasksEl.className = 'calendar-day-tasks';
         tasksEl.dataset.date = dateStr;
         cell.appendChild(tasksEl);
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'calendar-day-add-btn';
+        addBtn.textContent = '+';
+        addBtn.title = 'Добавить задачу';
+        addBtn.setAttribute('aria-label', 'Добавить задачу на этот день');
+        addBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openAddTaskModal(dateStr);
+        });
+        cell.appendChild(addBtn);
 
         grid.appendChild(cell);
     }
@@ -660,6 +671,139 @@ function init() {
     const { start, end } = getWeekRange();
     loadWeek(start, end);
     initMiniCalendar();
+}
+
+function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+}
+
+function escAttr(str) {
+    return String(str).replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+}
+
+let addTaskOverlay = null;
+
+function openAddTaskModal(dateStr) {
+    if (addTaskOverlay) return;
+
+    closeAllDropdowns();
+
+    const users = getUsers();
+    const today = todayStr();
+    const isFuture = dateStr > today;
+
+    addTaskOverlay = document.createElement('div');
+    addTaskOverlay.className = 'add-task-overlay';
+
+    addTaskOverlay.addEventListener('click', (e) => {
+        if (e.target === addTaskOverlay) closeAddTaskModal();
+    });
+
+    document.addEventListener('keydown', function onEsc(e) {
+        if (e.key === 'Escape') {
+            document.removeEventListener('keydown', onEsc);
+            closeAddTaskModal();
+        }
+    });
+
+    const modal = document.createElement('div');
+    modal.className = 'add-task-modal';
+
+    const d = parseDateStr(dateStr);
+    const formattedDate = `${d.getDate()} ${MONTH_NAMES[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+
+    modal.innerHTML = `
+        <h3 class="add-task-title">Новая задача на ${formattedDate}</h3>
+        <div class="form-group">
+            <label class="form-label" for="at-title">Название</label>
+            <input class="form-input" type="text" id="at-title" placeholder="Купить продукты" required autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="at-sp">SP (стоимость)</label>
+            <input class="form-input" type="number" id="at-sp" value="1" min="0">
+        </div>
+        <div class="form-group">
+            <label class="form-label" for="at-assignee">Исполнитель</label>
+            <select class="form-select" id="at-assignee">
+                <option value="">— Не назначен —</option>
+                ${users.map(u => `
+                    <option value="${u.id}">${escHtml(u.name)}</option>
+                `).join('')}
+            </select>
+        </div>
+        <div id="at-error" class="form-error"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="at-cancel">Отмена</button>
+            <button class="btn btn-primary" id="at-save">${isFuture ? 'Создать' : 'Создать'}</button>
+        </div>
+    `;
+
+    addTaskOverlay.appendChild(modal);
+    document.body.appendChild(addTaskOverlay);
+
+    const titleInput = modal.querySelector('#at-title');
+    titleInput.focus();
+
+    const errorEl = modal.querySelector('#at-error');
+    let submitted = false;
+
+    async function save() {
+        if (submitted) return;
+        submitted = true;
+        errorEl.textContent = '';
+
+        const titleVal = titleInput.value.trim();
+        const spVal = parseInt(modal.querySelector('#at-sp').value, 10);
+        const assigneeStr = modal.querySelector('#at-assignee').value;
+
+        if (!titleVal) {
+            errorEl.textContent = 'Введите название';
+            submitted = false;
+            return;
+        }
+
+        if (isNaN(spVal) || spVal < 0) {
+            errorEl.textContent = 'SP должно быть числом ≥ 0';
+            submitted = false;
+            return;
+        }
+
+        const assigneeVal = assigneeStr ? parseInt(assigneeStr, 10) : null;
+
+        try {
+            await post('/instances', {
+                title: titleVal,
+                scheduled_date: dateStr,
+                sp_cost: spVal,
+                assignee_id: assigneeVal,
+            });
+
+            closeAddTaskModal();
+            clearCalendarCache();
+            const weekStart = getWeekStart();
+            const { start: ws, end: we } = getWeekRange();
+            await loadWeek(ws, we);
+            showToast('Задача создана');
+        } catch (e) {
+            const msg = e?.message || 'Ошибка при создании задачи';
+            errorEl.textContent = msg;
+            submitted = false;
+        }
+    }
+
+    modal.querySelector('#at-save').addEventListener('click', save);
+    modal.querySelector('#at-cancel').addEventListener('click', closeAddTaskModal);
+    titleInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') save();
+    });
+}
+
+function closeAddTaskModal() {
+    if (!addTaskOverlay) return;
+    addTaskOverlay.remove();
+    addTaskOverlay = null;
 }
 
 init();

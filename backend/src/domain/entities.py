@@ -70,7 +70,8 @@ class TaskInstance:
     template_id: int | None
     title: str
     scheduled_date: date
-    assignee_id: int | None
+    sp_cost: int = 0
+    assignee_id: int | None = None
     completed_at: datetime | None = None
     completed_by_id: int | None = None
     sp_cost_at_completion: int | None = None

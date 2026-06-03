@@ -5,6 +5,7 @@ from src.application.dtos import TaskInstanceDTO, TaskTransferDTO
 from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
+    CreateInstanceUseCase,
     ReassignInstanceUseCase,
     RestoreInstanceUseCase,
     UncompleteInstanceUseCase,
@@ -27,6 +28,7 @@ from src.infrastructure.settings import get_settings
 from src.presentation.deps import (
     get_cancel_use_case,
     get_complete_use_case,
+    get_create_instance_use_case,
     get_reassign_use_case,
     get_restore_use_case,
     get_uncomplete_use_case,
@@ -34,6 +36,7 @@ from src.presentation.deps import (
 from src.presentation.schemas import (
     CompleteIn,
     ReassignIn,
+    TaskInstanceCreateIn,
     TaskInstanceOut,
     TaskTransferOut,
     TransfersOut,
@@ -43,12 +46,30 @@ from src.presentation.schemas import (
 router = APIRouter(prefix="/api/instances", tags=["instances"])
 
 
+@router.post("", response_model=TaskInstanceOut)
+def create_instance(
+    body: TaskInstanceCreateIn,
+    uc: CreateInstanceUseCase = Depends(get_create_instance_use_case),  # noqa: B008
+) -> TaskInstanceOut:
+    try:
+        inst = uc.execute(
+            title=body.title,
+            scheduled_date=body.scheduled_date,
+            sp_cost=body.sp_cost,
+            assignee_id=body.assignee_id,
+        )
+    except DomainError as exc:
+        _handle_domain_error(exc)
+    return _instance_dto_to_out(inst)
+
+
 EXCEPTION_MAP: dict[type[DomainError], tuple[int, str]] = {
     InstanceNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
     UserNotFoundError: (status.HTTP_404_NOT_FOUND, "not_found"),
     InstanceAlreadyCancelledError: (status.HTTP_409_CONFLICT, "conflict"),
     InstanceAlreadyCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
     InstanceNotCompletedError: (status.HTTP_409_CONFLICT, "conflict"),
+    DomainError: (status.HTTP_400_BAD_REQUEST, "validation_error"),
 }
 
 

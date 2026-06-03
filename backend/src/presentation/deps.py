@@ -10,6 +10,7 @@ from src.application.ports import (
 from src.application.use_cases import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
+    CreateInstanceUseCase,
     GetCalendarRangeUseCase,
     GetCalendarUseCase,
     GetDashboardUseCase,
@@ -136,5 +137,16 @@ def get_dashboard_use_case() -> GetDashboardUseCase:
         instance_repo,
         template_repo,
         transfer_repo,
+        clock,
+    )
+
+
+def get_create_instance_use_case() -> CreateInstanceUseCase:
+    user_repo, template_repo, instance_repo, transfer_repo, clock = _make_repos()
+    return CreateInstanceUseCase(
+        instance_repo,
+        user_repo,
+        transfer_repo,
+        template_repo,
         clock,
     )

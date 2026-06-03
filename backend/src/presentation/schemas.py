@@ -132,6 +132,13 @@ class TaskInstanceOut(BaseModel):
     transfers: list[TaskTransferOut]
 
 
+class TaskInstanceCreateIn(BaseModel):
+    title: str = Field(min_length=1)
+    scheduled_date: date
+    sp_cost: int = Field(ge=0, default=0)
+    assignee_id: int | None = None
+
+
 class ReassignIn(BaseModel):
     to_user_id: int
 

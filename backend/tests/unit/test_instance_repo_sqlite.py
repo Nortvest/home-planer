@@ -30,8 +30,8 @@ class TestSqliteInstanceRepository:
         repo = SqliteInstanceRepository(db_path)
         d1 = date(2026, 6, 1)
         d2 = date(2026, 6, 10)
-        repo.create(TaskInstance(0, None, "T1", date(2026, 6, 5), None))
-        repo.create(TaskInstance(0, None, "T2", date(2026, 6, 20), None))
+        repo.create(TaskInstance(0, None, "T1", date(2026, 6, 5), sp_cost=0, assignee_id=None))
+        repo.create(TaskInstance(0, None, "T2", date(2026, 6, 20), sp_cost=0, assignee_id=None))
         results = repo.list_by_date_range(d1, d2)
         assert len(results) == 1
         assert results[0].title == "T1"
@@ -42,8 +42,8 @@ class TestSqliteInstanceRepository:
         t2 = tmpl_repo.create("T2", None, 2, "none", {}, None)
 
         repo = SqliteInstanceRepository(db_path)
-        repo.create(TaskInstance(0, t1.id, "Instance T1", date(2026, 6, 5), None))
-        repo.create(TaskInstance(0, t2.id, "Instance T2", date(2026, 6, 5), None))
+        repo.create(TaskInstance(0, t1.id, "Instance T1", date(2026, 6, 5), sp_cost=1, assignee_id=None))
+        repo.create(TaskInstance(0, t2.id, "Instance T2", date(2026, 6, 5), sp_cost=2, assignee_id=None))
         results = repo.list_by_template_and_date(t1.id, date(2026, 6, 5))
         assert len(results) == 1
         assert results[0].template_id == t1.id
@@ -76,8 +76,8 @@ class TestSqliteInstanceRepository:
     def test_list_overdue(self, db_path: str) -> None:
         today = date(2026, 6, 15)
         repo = SqliteInstanceRepository(db_path)
-        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), None))
-        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), None))
+        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), sp_cost=0, assignee_id=None))
+        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), sp_cost=0, assignee_id=None))
         overdue = repo.list_overdue(today)
         assert len(overdue) == 1
         assert overdue[0].title == "Old"
@@ -85,16 +85,16 @@ class TestSqliteInstanceRepository:
     def test_count_by_status_pending(self, db_path: str) -> None:
         today = date(2026, 6, 15)
         repo = SqliteInstanceRepository(db_path)
-        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), None))
-        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), None))
+        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), sp_cost=0, assignee_id=None))
+        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), sp_cost=0, assignee_id=None))
         cnt = repo.count_by_status(today, "pending")
         assert cnt == 1
 
     def test_count_by_status_overdue(self, db_path: str) -> None:
         today = date(2026, 6, 15)
         repo = SqliteInstanceRepository(db_path)
-        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), None))
-        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), None))
+        repo.create(TaskInstance(0, None, "Future", date(2026, 6, 20), sp_cost=0, assignee_id=None))
+        repo.create(TaskInstance(0, None, "Old", date(2026, 6, 1), sp_cost=0, assignee_id=None))
         cnt = repo.count_by_status(today, "overdue")
         assert cnt == 1
 

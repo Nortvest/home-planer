@@ -3,6 +3,7 @@ from src.application.use_cases.dashboard import GetDashboardUseCase
 from src.application.use_cases.instances import (
     CancelInstanceUseCase,
     CompleteInstanceUseCase,
+    CreateInstanceUseCase,
     ReassignInstanceUseCase,
     RestoreInstanceUseCase,
     UncompleteInstanceUseCase,
@@ -13,6 +14,7 @@ from src.application.use_cases.users import UserManagementUseCase
 __all__ = [
     "CancelInstanceUseCase",
     "CompleteInstanceUseCase",
+    "CreateInstanceUseCase",
     "GetCalendarRangeUseCase",
     "GetCalendarUseCase",
     "GetDashboardUseCase",

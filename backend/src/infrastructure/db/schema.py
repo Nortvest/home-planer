@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from src.domain.value_objects import RecurrenceType
 
-SCHEMA_VERSION: int = 2
+SCHEMA_VERSION: int = 3
 
 
 @dataclass(frozen=True)
@@ -82,13 +82,14 @@ instance_columns = _columns([
     Column("template_id", "INTEGER"),
     Column("title", "TEXT", not_null=True),
     Column("scheduled_date", "TEXT", not_null=True),
+    Column("sp_cost", "INTEGER", not_null=True, default="0"),
     Column("assignee_id", "INTEGER"),
     Column("completed_at", "TEXT"),
     Column("completed_by_id", "INTEGER"),
     Column("sp_cost_at_completion", "INTEGER"),
     Column("cancelled_at", "TEXT"),
     Column("created_at", "TEXT", not_null=True, default="(datetime('now'))"),
-])
+    ])
 
 instance_indexes: list[Index] = [
     Index("idx_instance_scheduled_date", "task_instance", ["scheduled_date"]),

@@ -48,12 +48,13 @@ class SqliteInstanceRepository(InstanceRepository):
             now = datetime.now(timezone.utc).isoformat()
             cur = conn.execute(
                 "INSERT INTO task_instance "
-                "(template_id, title, scheduled_date, assignee_id, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "(template_id, title, scheduled_date, sp_cost, assignee_id, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
                 (
                     instance.template_id,
                     instance.title,
                     instance.scheduled_date.isoformat(),
+                    instance.sp_cost,
                     instance.assignee_id,
                     now,
                 ),
@@ -68,13 +69,14 @@ class SqliteInstanceRepository(InstanceRepository):
         with get_transaction(self._db_path) as conn:
             conn.execute(
                 "UPDATE task_instance SET "
-                "title = ?, scheduled_date = ?, assignee_id = ?, "
+                "title = ?, scheduled_date = ?, sp_cost = ?, assignee_id = ?, "
                 "completed_at = ?, completed_by_id = ?, sp_cost_at_completion = ?, "
                 "cancelled_at = ? "
                 "WHERE id = ?",
                 (
                     instance.title,
                     instance.scheduled_date.isoformat(),
+                    instance.sp_cost,
                     instance.assignee_id,
                     instance.completed_at.isoformat() if instance.completed_at else None,
                     instance.completed_by_id,
@@ -169,6 +171,7 @@ class SqliteInstanceRepository(InstanceRepository):
             template_id=row["template_id"],
             title=row["title"],
             scheduled_date=date.fromisoformat(row["scheduled_date"]),
+            sp_cost=int(row["sp_cost"]) if row["sp_cost"] is not None else 0,
             assignee_id=row["assignee_id"],
             completed_at=datetime.fromisoformat(row["completed_at"]) if row["completed_at"] else None,
             completed_by_id=row["completed_by_id"],

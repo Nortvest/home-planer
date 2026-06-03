@@ -15,7 +15,7 @@ class TestSqliteTransferRepository:
         u_to = user_repo.create("To", "#222222")
 
         inst_repo = SqliteInstanceRepository(db_path)
-        inst = inst_repo.create(TaskInstance(0, None, "T", date(2026, 6, 1), None))
+        inst = inst_repo.create(TaskInstance(0, None, "T", date(2026, 6, 1), sp_cost=0, assignee_id=None))
 
         transfer_repo = SqliteTransferRepository(db_path)
         transfer = TaskTransfer(
@@ -49,7 +49,7 @@ def _create_and_verify_multi_transfer(db_path: str) -> None:
     u3 = user_repo.create("U3", "#333333")
 
     inst_repo = SqliteInstanceRepository(db_path)
-    inst = inst_repo.create(TaskInstance(0, None, "T", date(2026, 6, 1), None))
+    inst = inst_repo.create(TaskInstance(0, None, "T", date(2026, 6, 1), sp_cost=0, assignee_id=None))
 
     repo = SqliteTransferRepository(db_path)
     t1 = TaskTransfer(
