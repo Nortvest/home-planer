@@ -1,22 +1,22 @@
 import { setupTheme } from './theme.js';
 import { get } from './api.js';
 import { renderTaskCard, updateCardInDOM, closeAllDropdowns } from './card.js';
+import { showToast } from './ui/toast.js';
 import {
     setUsers,
     getUsers,
-    setCurrentMonth,
-    getCurrentMonth,
-    setCalendarTasks,
-    getCalendarTasks,
-    updateTaskInState,
+    getWeekStart,
+    setWeekStart,
+    getWeekRange,
+    setLastLoadedWeek,
+    getLastLoadedWeek,
+    setWeekTasks,
+    getWeekTasks,
+    updateTaskInWeekState,
     clearCalendarCache,
 } from './state.js';
 
 setupTheme();
-
-function getMaxVisibleCards() {
-    return window.innerWidth <= 600 ? Infinity : 3;
-}
 
 const MONTH_NAMES = [
     'Январь', 'Февраль', 'Март', 'Апрель',
@@ -28,7 +28,7 @@ const WEEKDAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
 
 const appEl = document.getElementById('app');
 
-function todayKey() {
+function todayStr() {
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -36,23 +36,41 @@ function todayKey() {
     return `${y}-${m}-${day}`;
 }
 
-function isToday(year, month, day) {
-    const t = new Date();
-    return t.getFullYear() === year && t.getMonth() + 1 === month && t.getDate() === day;
+function isToday(dateStr) {
+    return dateStr === todayStr();
 }
 
 function isOverdueDate(dateStr) {
-    const today = todayKey();
-    return dateStr < today;
+    return dateStr < todayStr();
 }
 
-function daysInMonth(year, month) {
-    return new Date(year, month, 0).getDate();
+function getWeekStartForDate(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    const dow = d.getDay();
+    const offset = dow === 0 ? -6 : 1 - dow;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + offset);
+    monday.setHours(0, 0, 0, 0);
+    return monday.toISOString().split('T')[0];
 }
 
-function firstDayOfMonth(year, month) {
-    let dow = new Date(year, month - 1, 1).getDay();
-    return dow === 0 ? 6 : dow - 1;
+function getCurrentWeekStart() {
+    return getWeekStartForDate(todayStr());
+}
+
+function isCurrentWeek() {
+    return getWeekStart() === getCurrentWeekStart();
+}
+
+function addWeekDays(dateStr, delta) {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + delta * 7);
+    return d.toISOString().split('T')[0];
+}
+
+function formatDateForDisplay(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return `${d.getDate()}`;
 }
 
 function getOrCreateContainer() {
@@ -69,7 +87,7 @@ function clearContainer() {
     appEl.innerHTML = '';
 }
 
-function renderNav(year, month) {
+function renderNav(weekStartStr) {
     const container = getOrCreateContainer();
     let nav = container.querySelector('.calendar-nav');
     if (!nav) {
@@ -83,31 +101,46 @@ function renderNav(year, month) {
     const prevBtn = document.createElement('button');
     prevBtn.className = 'nav-prev';
     prevBtn.textContent = '\u2039';
-    prevBtn.title = 'Предыдущий месяц';
-    prevBtn.setAttribute('aria-label', 'Предыдущий месяц');
-    prevBtn.addEventListener('click', () => changeMonth(-1));
+    prevBtn.title = 'Предыдущая неделя';
+    prevBtn.setAttribute('aria-label', 'Предыдущая неделя');
+    prevBtn.addEventListener('click', () => changeWeek(-1));
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'nav-next';
     nextBtn.textContent = '\u203A';
-    nextBtn.title = 'Следующий месяц';
-    nextBtn.setAttribute('aria-label', 'Следующий месяц');
-    nextBtn.addEventListener('click', () => changeMonth(1));
+    nextBtn.title = 'Следующая неделя';
+    nextBtn.setAttribute('aria-label', 'Следующая неделя');
+    nextBtn.addEventListener('click', () => changeWeek(1));
+
+    if (isCurrentWeek()) {
+        nextBtn.style.display = 'none';
+    }
 
     const todayBtn = document.createElement('button');
     todayBtn.className = 'nav-today';
     todayBtn.textContent = 'Сегодня';
-    todayBtn.title = 'Перейти к сегодняшнему месяцу';
+    todayBtn.title = 'Перейти к текущей неделе';
     todayBtn.setAttribute('aria-label', 'Сегодня');
     todayBtn.style.fontWeight = '600';
     todayBtn.style.fontSize = '0.85rem';
     todayBtn.style.width = 'auto';
     todayBtn.style.padding = '0 0.6rem';
-    todayBtn.addEventListener('click', goToToday);
+
+    if (isCurrentWeek()) {
+        todayBtn.disabled = true;
+        todayBtn.style.opacity = '0.5';
+        todayBtn.style.cursor = 'default';
+    } else {
+        todayBtn.addEventListener('click', goToToday);
+    }
+
+    const startD = new Date(weekStartStr + 'T00:00:00');
+    const endD = new Date(startD);
+    endD.setDate(startD.getDate() + 6);
 
     const title = document.createElement('span');
     title.className = 'calendar-month-title';
-    title.textContent = `${MONTH_NAMES[month - 1]} ${year}`;
+    title.textContent = `Пн ${startD.getDate()} – Вс ${endD.getDate()} ${MONTH_NAMES[endD.getMonth()]} ${endD.getFullYear()}`;
 
     nav.appendChild(prevBtn);
     nav.appendChild(todayBtn);
@@ -115,7 +148,7 @@ function renderNav(year, month) {
     nav.appendChild(title);
 }
 
-function buildGrid(year, month) {
+function buildWeekGrid(weekStartStr) {
     const container = getOrCreateContainer();
     let grid = container.querySelector('.calendar-grid');
     if (!grid) {
@@ -133,61 +166,27 @@ function buildGrid(year, month) {
         grid.appendChild(hc);
     }
 
-    const fdow = firstDayOfMonth(year, month);
-    const dim = daysInMonth(year, month);
-    const today = todayKey();
+    const today = todayStr();
 
-    const prevMonth = month === 1 ? 12 : month - 1;
-    const prevYear = month === 1 ? year - 1 : year;
-    const pdim = daysInMonth(prevYear, prevMonth);
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStartStr + 'T00:00:00');
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
 
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-
-    const totalCells = Math.ceil((fdow + dim) / 7) * 7;
-
-    for (let i = 0; i < totalCells; i++) {
         const cell = document.createElement('div');
         cell.className = 'calendar-day-cell';
-
-        let cellYear, cellMonth, cellDay, dateStr, isOtherMonth = false;
-
-        if (i < fdow) {
-            const day = pdim - fdow + 1 + i;
-            cellYear = prevYear;
-            cellMonth = prevMonth;
-            cellDay = day;
-            isOtherMonth = true;
-        } else if (i >= fdow + dim) {
-            const day = i - fdow - dim + 1;
-            cellYear = nextYear;
-            cellMonth = nextMonth;
-            cellDay = day;
-            isOtherMonth = true;
-        } else {
-            const day = i - fdow + 1;
-            cellYear = year;
-            cellMonth = month;
-            cellDay = day;
-        }
-
-        dateStr = `${cellYear}-${String(cellMonth).padStart(2, '0')}-${String(cellDay).padStart(2, '0')}`;
-
-        if (isOtherMonth) {
-            cell.classList.add('other-month');
-        }
 
         if (dateStr === today) {
             cell.classList.add('today');
         }
 
-        if (!isOtherMonth && isOverdueDate(dateStr)) {
+        if (isOverdueDate(dateStr)) {
             cell.classList.add('overdue-day');
         }
 
         const numEl = document.createElement('span');
         numEl.className = 'calendar-day-number';
-        numEl.textContent = cellDay;
+        numEl.textContent = d.getDate();
         cell.appendChild(numEl);
 
         const tasksEl = document.createElement('div');
@@ -200,19 +199,20 @@ function buildGrid(year, month) {
 }
 
 function onCardRefresh(updatedTask) {
-    const { year, month } = getCurrentMonth();
-    updateTaskInState(year, month, updatedTask.id, (t) => {
+    const weekStart = getWeekStart();
+    updateTaskInWeekState(weekStart, updatedTask.id, (t) => {
         Object.assign(t, updatedTask);
     });
     const cardEl = document.querySelector(`.calendar-task-card[data-task-id="${updatedTask.id}"]`);
     if (cardEl) {
         updateCardInDOM(cardEl, updatedTask);
     } else {
-        loadCalendar(year, month);
+        const { start, end } = getWeekRange();
+        loadWeek(start, end);
     }
 }
 
-function populateTasks(daysData) {
+function populateWeekTasks(daysData) {
     const taskContainers = document.querySelectorAll('.calendar-day-tasks');
     let hasAnyTasks = false;
 
@@ -225,19 +225,11 @@ function populateTasks(daysData) {
         }
 
         hasAnyTasks = true;
-        const maxVisible = getMaxVisibleCards();
-        const visible = tasks.slice(0, maxVisible);
-        for (const task of visible) {
+
+        for (const task of tasks) {
             const card = renderTaskCard(task, onCardRefresh);
             card._onCardRefresh = onCardRefresh;
             tc.appendChild(card);
-        }
-
-        if (tasks.length > maxVisible) {
-            const more = document.createElement('div');
-            more.className = 'calendar-more-count';
-            more.textContent = `+${tasks.length - maxVisible} ещё`;
-            tc.appendChild(more);
         }
     }
 
@@ -246,7 +238,7 @@ function populateTasks(daysData) {
         if (grid) {
             const empty = document.createElement('div');
             empty.className = 'calendar-empty';
-            empty.textContent = 'В этом месяце задач нет. Создайте шаблон в админке, чтобы начать.';
+            empty.textContent = 'В этой неделе задач нет. Создайте шаблон в админке, чтобы начать.';
             grid.appendChild(empty);
         }
     }
@@ -293,8 +285,8 @@ function showError(message) {
     btn.textContent = 'Повторить';
     btn.setAttribute('aria-label', 'Повторить загрузку');
     btn.addEventListener('click', () => {
-        const { year, month } = getCurrentMonth();
-        loadCalendar(year, month);
+        const { start, end } = getWeekRange();
+        loadWeek(start, end);
     });
     err.appendChild(btn);
 
@@ -309,21 +301,32 @@ function createGrid() {
     return grid;
 }
 
-async function loadCalendar(year, month) {
+async function loadWeek(start, end) {
+    const cached = getWeekTasks(start);
+    if (cached) {
+        setWeekStart(start);
+        setLastLoadedWeek(start);
+        renderNav(start);
+        buildWeekGrid(start);
+        populateWeekTasks(cached);
+        return;
+    }
+
     showLoading();
 
     try {
-        const data = await get(`/calendar?year=${year}&month=${month}`);
+        const data = await get(`/calendar/range?start=${start}&end=${end}`);
 
-        setCurrentMonth(year, month);
+        setWeekStart(start);
+        setLastLoadedWeek(start);
         setUsers(data.users || []);
 
         const daysData = data.days || {};
-        setCalendarTasks(`${year}-${month}`, daysData);
+        setWeekTasks(start, daysData);
 
-        renderNav(year, month);
-        buildGrid(year, month);
-        populateTasks(daysData);
+        renderNav(start);
+        buildWeekGrid(start);
+        populateWeekTasks(daysData);
         hideLoading();
     } catch (err) {
         hideLoading();
@@ -333,28 +336,38 @@ async function loadCalendar(year, month) {
     }
 }
 
-function changeMonth(delta) {
-    const { year, month } = getCurrentMonth();
-    let m = month + delta;
-    let y = year;
-    if (m < 1) { m = 12; y--; }
-    if (m > 12) { m = 1; y++; }
-    setCurrentMonth(y, m);
+function changeWeek(delta) {
+    const currentStart = getWeekStart();
+    const newStart = addWeekDays(currentStart, delta);
+
+    if (delta > 0) {
+        const currentWeekStart = getCurrentWeekStart();
+        if (newStart >= currentWeekStart) {
+            showToast('Переход к будущим неделям недоступен', 'error');
+            return;
+        }
+    }
+
+    setWeekStart(newStart);
     clearCalendarCache();
     closeAllDropdowns();
-    loadCalendar(y, m);
+    loadWeek(newStart, addWeekDays(newStart, 1));
 }
 
 function goToToday() {
-    const d = new Date();
+    const currentWeekStart = getCurrentWeekStart();
+    setWeekStart(currentWeekStart);
     clearCalendarCache();
     closeAllDropdowns();
-    loadCalendar(d.getFullYear(), d.getMonth() + 1);
+    const { start, end } = getWeekRange();
+    loadWeek(start, end);
 }
 
 function init() {
-    const { year, month } = getCurrentMonth();
-    loadCalendar(year, month);
+    const currentWeekStart = getCurrentWeekStart();
+    setWeekStart(currentWeekStart);
+    const { start, end } = getWeekRange();
+    loadWeek(start, end);
 }
 
 init();
