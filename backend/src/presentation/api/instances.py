@@ -91,7 +91,7 @@ def _transfer_dto_to_out(t: TaskTransferDTO) -> TaskTransferOut:
     )
 
 
-@router.get("/instances/{instance_id:int}", response_model=TaskInstanceOut)
+@router.get("/{instance_id:int}", response_model=TaskInstanceOut)
 def get_instance(instance_id: int) -> TaskInstanceOut:
     db_path = get_settings().db_path_resolved
     user_repo = SqliteUserRepository(db_path)
