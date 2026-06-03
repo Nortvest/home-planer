@@ -164,8 +164,8 @@ function renderChart(items) {
     let svg = `<div class="chart-container"><svg viewBox="0 0 ${totalW} ${svgH}" xmlns="http://www.w3.org/2000/svg">`;
 
     svg += `<line class="chart-axis" x1="${padLeft}" y1="${axisBottom}" x2="${totalW - 10}" y2="${axisBottom}" stroke-width="1"/>`;
-    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisY + 3}" font-size="8" text-anchor="end">${maxSp} SP</text>`;
-    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisBottom + 2}" font-size="8" text-anchor="end">0 SP</text>`;
+    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisY + 3}" font-size="6" text-anchor="end">${maxSp} SP</text>`;
+    svg += `<text class="chart-max-label" x="${padLeft - 6}" y="${axisBottom + 2}" font-size="6" text-anchor="end">0 SP</text>`;
 
     items.forEach((item, i) => {
         const user = item.user || {};
@@ -177,8 +177,8 @@ function renderChart(items) {
         const y = axisBottom - barH;
 
         svg += `<rect x="${x}" y="${y}" width="${barWidth}" height="${Math.max(barH, 0)}" fill="${color}" rx="3"/>`;
-        svg += `<text class="chart-val" x="${x + barWidth / 2}" y="${y - 3}" font-size="8" text-anchor="middle">${sp}</text>`;
-        svg += `<text class="chart-label" x="${x + barWidth / 2}" y="${axisBottom + 16}" font-size="9" text-anchor="middle">${escHtml(name)}</text>`;
+        svg += `<text class="chart-val" x="${x + barWidth / 2}" y="${y - 3}" font-size="6" text-anchor="middle">${sp}</text>`;
+        svg += `<text class="chart-label" x="${x + barWidth / 2}" y="${axisBottom + 14}" font-size="7" text-anchor="middle">${escHtml(name)}</text>`;
     });
 
     svg += `</svg></div>`;
